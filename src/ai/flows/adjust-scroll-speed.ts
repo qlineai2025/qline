@@ -74,8 +74,23 @@ const adjustScrollSpeedFlow = ai.defineFlow(
     inputSchema: AdjustScrollSpeedInputSchema,
     outputSchema: AdjustScrollSpeedOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+  async (input) => {
+    try {
+      const { output } = await prompt(input);
+      // Added a check for null/undefined output for robustness.
+      if (!output) {
+        throw new Error('The AI model did not produce a valid output.');
+      }
+      return output;
+    } catch (e: any) {
+      // Provide a more specific error message if the API key is missing.
+      if (e.message?.includes('API key')) {
+        console.error("Genkit configuration error: The GOOGLE_API_KEY may be missing or invalid.", e);
+        throw new Error('Voice Control is not configured. Please ensure your GOOGLE_API_KEY is set correctly in the .env file.');
+      }
+      // Log the original error for debugging and re-throw a generic error for the client.
+      console.error("An error occurred in the adjustScrollSpeed flow:", e);
+      throw new Error('An unexpected error occurred while adjusting scroll speed.');
+    }
   }
 );
