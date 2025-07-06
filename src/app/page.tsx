@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { trackSpeechPosition } from "@/ai/flows/track-speech-position";
+import { controlTeleprompter } from "@/ai/flows/teleprompter-control-flow.ts";
 import { assistWithScript, ScriptAssistantCommand } from "@/ai/flows/script-assistant-flow.ts";
 import { cn } from "@/lib/utils";
 
@@ -62,6 +62,7 @@ import {
   ChevronLeft,
   ChevronRight,
   NotebookText,
+  Rewind,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -81,6 +82,8 @@ Right-click on selected text to get AI assistance.
 Press the play button to start scrolling. The app will automatically enter full-screen mode.
 
 Enable voice control (on by default) to have the teleprompter automatically adjust its speed to your reading pace.
+
+You can also use voice commands like "next slide", "pause", "play", or "rewind".
 
 Use the settings on the left to adjust the font size, margins, and manual scroll speed.
 `;
@@ -374,6 +377,16 @@ export default function Home() {
         reader.readAsDataURL(blob);
     });
   };
+  
+  const handleRewind = () => {
+    if (displayRef.current) {
+        displayRef.current.scrollTop = 0;
+    }
+    channelRef.current?.postMessage({ type: "reset" });
+    if (isPlaying) {
+        setIsPlaying(false);
+    }
+  };
 
   const handleNextSlide = useCallback(() => {
     const newIndex = Math.min(currentSlideIndex + 1, slides.length - 1);
@@ -398,48 +411,88 @@ export default function Home() {
     
     try {
       const audioDataUri = await blobToDataUri(audioBlob);
-      const { lastSpokenWordIndex, adjustedScrollSpeed } = await trackSpeechPosition({
+      const prompterState = {
+          isPlaying,
+          prompterMode,
+          totalSlides: slides.length,
+          currentSlideIndex,
+      };
+      
+      const { command, slideNumber, lastSpokenWordIndex, adjustedScrollSpeed } = await controlTeleprompter({
         audioDataUri,
         scriptText: text,
         currentScrollSpeed: scrollSpeedRef.current,
+        prompterState,
       });
-      
-      if (adjustedScrollSpeed) {
-        setScrollSpeed(adjustedScrollSpeed);
-      }
-      
-      const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
-      if (
-        prompterMode === 'slides' &&
-        slideDisplayMode === 'notes' &&
-        wordCount > 0 &&
-        lastSpokenWordIndex >= wordCount - 2 // A buffer for the end
-      ) {
-        if (currentSlideIndex < slides.length - 1) {
-          handleNextSlide();
-          return; 
-        } else {
-          setIsPlaying(false);
-        }
-      }
 
-      const targetWord = document.getElementById(`word-${lastSpokenWordIndex}`);
-      if (targetWord) {
-        targetWord.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        channelRef.current?.postMessage({ type: 'scroll_to_word', payload: { wordIndex: lastSpokenWordIndex } });
+      switch (command) {
+        case 'next_slide':
+            if (prompterMode === 'slides') handleNextSlide();
+            break;
+        case 'previous_slide':
+            if (prompterMode === 'slides') handlePrevSlide();
+            break;
+        case 'go_to_slide':
+            if (prompterMode === 'slides' && slideNumber !== null && slideNumber >= 1 && slideNumber <= slides.length) {
+                const newIndex = slideNumber - 1;
+                setCurrentSlideIndex(newIndex);
+                setText(slides[newIndex]?.speakerNotes || '');
+                channelRef.current?.postMessage({ type: 'slide_change', payload: { newIndex } });
+            }
+            break;
+        case 'stop_scrolling':
+            setIsPlaying(false);
+            channelRef.current?.postMessage({ type: "pause" });
+            break;
+        case 'start_scrolling':
+             if (!playPauseDisabled) {
+                setIsPlaying(true);
+                channelRef.current?.postMessage({ type: "play" });
+            }
+            break;
+        case 'rewind':
+            handleRewind();
+            break;
+        case 'no_op':
+        default:
+            if (adjustedScrollSpeed) {
+              setScrollSpeed(adjustedScrollSpeed);
+            }
+            
+            const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
+            if (
+              prompterMode === 'slides' &&
+              slideDisplayMode === 'notes' &&
+              wordCount > 0 &&
+              lastSpokenWordIndex >= wordCount - 2 
+            ) {
+              if (currentSlideIndex < slides.length - 1) {
+                handleNextSlide();
+                return; 
+              } else {
+                setIsPlaying(false);
+              }
+            }
+
+            const targetWord = document.getElementById(`word-${lastSpokenWordIndex}`);
+            if (targetWord) {
+              targetWord.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              channelRef.current?.postMessage({ type: 'scroll_to_word', payload: { wordIndex: lastSpokenWordIndex } });
+            }
+            break;
       }
 
     } catch (error: any) {
-      console.error("Error tracking speech position:", error);
+      console.error("Error processing voice input:", error);
       toast({
         variant: "destructive",
         title: "AI Error",
-        description: error.message || "Could not track speech position.",
+        description: error.message || "Could not process voice input.",
       });
     } finally {
       setIsProcessingAudio(false);
     }
-  }, [text, toast, prompterMode, slideDisplayMode, currentSlideIndex, slides, handleNextSlide]);
+  }, [text, toast, prompterMode, slideDisplayMode, currentSlideIndex, slides, handleNextSlide, handlePrevSlide, isPlaying]);
 
   const startRecording = useCallback(() => {
     navigator.mediaDevices.getUserMedia({ audio: true })
@@ -584,8 +637,7 @@ export default function Home() {
       setIsMaximized(true);
       if (displayRef.current) {
         if (displayRef.current.scrollTop + displayRef.current.clientHeight >= displayRef.current.scrollHeight - 1) {
-          displayRef.current.scrollTop = 0;
-          channelRef.current?.postMessage({ type: "reset" });
+          handleRewind();
         }
       }
     }
@@ -1237,6 +1289,22 @@ export default function Home() {
             </Card>
             <div className="absolute bottom-4 right-4 z-10 flex flex-col items-end gap-2">
               <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={handleRewind}
+                      variant="ghost"
+                      size="icon"
+                      className={cn(
+                        "opacity-60",
+                        isHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : ""
+                      )}
+                    >
+                      <Rewind className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left"><p>Rewind to Top</p></TooltipContent>
+                </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
