@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, ChangeEvent } from "react";
 import { adjustScrollSpeed } from "@/ai/flows/adjust-scroll-speed";
+import { cn } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +11,20 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, Play, Pause, Mic, MicOff, Settings, FileText } from "lucide-react";
+import {
+  Upload,
+  Play,
+  Pause,
+  Mic,
+  MicOff,
+  Settings,
+  FileText,
+  Maximize,
+  Minimize,
+  Contrast,
+  ArrowLeftRight,
+  ArrowUpDown,
+} from "lucide-react";
 
 const DEFAULT_TEXT = `Welcome to AutoScroll Teleprompter.
 
@@ -32,6 +46,11 @@ export default function Home() {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [isVoiceControlOn, setIsVoiceControlOn] = useState<boolean>(false);
   const [isProcessingAudio, setIsProcessingAudio] = useState<boolean>(false);
+  const [isHighContrast, setIsHighContrast] = useState<boolean>(false);
+  const [isMaximized, setIsMaximized] = useState<boolean>(false);
+  const [isFlippedHorizontally, setIsFlippedHorizontally] = useState<boolean>(false);
+  const [isFlippedVertically, setIsFlippedVertically] = useState<boolean>(false);
+
 
   const displayRef = useRef<HTMLDivElement>(null);
   const scrollRequestRef = useRef<number | null>(null);
@@ -198,9 +217,24 @@ export default function Home() {
   }, [text]);
 
   return (
-    <main className="min-h-screen bg-background p-4 sm:p-6 md:p-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-screen-2xl mx-auto">
-        <div className="lg:col-span-1 flex flex-col gap-8">
+    <main
+      className={cn(
+        "min-h-screen bg-background transition-all duration-300",
+        isMaximized ? "p-0" : "p-4 sm:p-6 md:p-8"
+      )}
+    >
+      <div
+        className={cn(
+          "grid gap-8 max-w-screen-2xl mx-auto",
+          isMaximized ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-3"
+        )}
+      >
+        <div
+          className={cn(
+            "lg:col-span-1 flex-col gap-8",
+            isMaximized ? "hidden" : "flex"
+          )}
+        >
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -236,6 +270,9 @@ export default function Home() {
                   {isPlaying ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
                   {isPlaying ? "Pause" : "Play"}
                 </Button>
+                <Button onClick={() => setIsMaximized(!isMaximized)} variant="outline" size="icon" className="shrink-0">
+                  {isMaximized ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+                </Button>
               </div>
 
               <div className="space-y-4">
@@ -252,6 +289,43 @@ export default function Home() {
                 </div>
                  {isProcessingAudio && <p className="text-sm text-muted-foreground text-center">Adjusting speed...</p>}
               </div>
+
+              <div className="space-y-4 pt-4 border-t">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="high-contrast" className="flex items-center gap-2">
+                    <Contrast className="h-4 w-4" />
+                    High Contrast
+                  </Label>
+                   <Switch
+                    id="high-contrast"
+                    checked={isHighContrast}
+                    onCheckedChange={setIsHighContrast}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="flip-horizontal" className="flex items-center gap-2">
+                    <ArrowLeftRight className="h-4 w-4" />
+                    Flip Horizontal
+                  </Label>
+                   <Switch
+                    id="flip-horizontal"
+                    checked={isFlippedHorizontally}
+                    onCheckedChange={setIsFlippedHorizontally}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="flip-vertical" className="flex items-center gap-2">
+                    <ArrowUpDown className="h-4 w-4" />
+                    Flip Vertical
+                  </Label>
+                   <Switch
+                    id="flip-vertical"
+                    checked={isFlippedVertically}
+                    onCheckedChange={setIsFlippedVertically}
+                  />
+                </div>
+              </div>
+
 
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -293,19 +367,37 @@ export default function Home() {
           </Card>
         </div>
 
-        <div className="lg:col-span-2">
-          <Card className="h-[85vh] flex flex-col">
+        <div
+          className={cn(
+            "lg:col-span-2",
+            isMaximized ? "h-screen" : "h-[85vh]"
+          )}
+        >
+          <Card
+            className={cn(
+              "h-full flex flex-col",
+              isMaximized && "rounded-none border-none"
+            )}
+          >
             <CardContent className="p-0 flex-grow overflow-hidden">
               <div
                 ref={displayRef}
-                className="h-full overflow-y-scroll scroll-smooth p-4"
+                className={cn(
+                  "h-full overflow-y-scroll scroll-smooth p-4",
+                  isHighContrast && "bg-black",
+                  isFlippedHorizontally && "scale-x-[-1]",
+                  isFlippedVertically && "scale-y-[-1]"
+                )}
                 style={{
                   paddingLeft: `${margin}%`,
                   paddingRight: `${margin}%`,
                 }}
               >
                 <div
-                  className="text-foreground whitespace-pre-wrap break-words"
+                  className={cn(
+                    "whitespace-pre-wrap break-words",
+                    isHighContrast ? "text-white" : "text-foreground"
+                  )}
                   style={{
                     fontSize: `${fontSize}px`,
                     lineHeight: 1.5,
