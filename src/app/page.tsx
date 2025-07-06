@@ -47,10 +47,16 @@ import {
   StretchHorizontal,
   StretchVertical,
   ScreenShare,
+  RotateCcw,
+  Save,
+  Check,
+  Search,
+  Trash2,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { GoogleDocPicker } from "@/components/google-doc-picker";
 
 
@@ -65,15 +71,32 @@ Enable voice control (on by default) to have the teleprompter automatically adju
 Use the settings on the left to adjust the font size, margins, and manual scroll speed.
 `;
 
+const DEFAULT_SETTINGS = {
+  scrollSpeed: 30,
+  fontSize: 40,
+  horizontalMargin: 20,
+  verticalMargin: 18,
+};
+
+interface SavedSetting {
+  id: string;
+  name: string;
+  scrollSpeed: number;
+  fontSize: number;
+  horizontalMargin: number;
+  verticalMargin: number;
+}
+
+
 export default function Home() {
   const { toast } = useToast();
   const { user, loading, setAccessToken } = useAuth();
 
   const [text, setText] = useState<string>(DEFAULT_TEXT);
-  const [scrollSpeed, setScrollSpeed] = useState<number>(30);
-  const [fontSize, setFontSize] = useState<number>(40);
-  const [horizontalMargin, setHorizontalMargin] = useState<number>(20);
-  const [verticalMargin, setVerticalMargin] = useState<number>(18);
+  const [scrollSpeed, setScrollSpeed] = useState<number>(DEFAULT_SETTINGS.scrollSpeed);
+  const [fontSize, setFontSize] = useState<number>(DEFAULT_SETTINGS.fontSize);
+  const [horizontalMargin, setHorizontalMargin] = useState<number>(DEFAULT_SETTINGS.horizontalMargin);
+  const [verticalMargin, setVerticalMargin] = useState<number>(DEFAULT_SETTINGS.verticalMargin);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [isVoiceControlOn, setIsVoiceControlOn] = useState<boolean>(true);
   const [isProcessingAudio, setIsProcessingAudio] = useState<boolean>(false);
@@ -95,6 +118,13 @@ export default function Home() {
   const [verticalMarginInput, setVerticalMarginInput] = useState(String(verticalMargin));
 
   const [isPickerOpen, setIsPickerOpen] = useState(false);
+  
+  const [savedSettings, setSavedSettings] = useState<SavedSetting[]>([]);
+  const [isSavePopoverOpen, setIsSavePopoverOpen] = useState(false);
+  const [newSettingName, setNewSettingName] = useState('');
+  const [isLoadPopoverOpen, setIsLoadPopoverOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const displayRef = useRef<HTMLDivElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -114,6 +144,35 @@ export default function Home() {
   useEffect(() => { setFontSizeInput(String(fontSize)) }, [fontSize]);
   useEffect(() => { setHorizontalMarginInput(String(horizontalMargin)) }, [horizontalMargin]);
   useEffect(() => { setVerticalMarginInput(String(verticalMargin)) }, [verticalMargin]);
+
+  // Load saved settings from localStorage on mount
+  useEffect(() => {
+    try {
+      const storedSettings = localStorage.getItem("teleprompter_presets");
+      if (storedSettings) {
+        setSavedSettings(JSON.parse(storedSettings));
+      }
+    } catch (e) {
+      console.error("Could not load presets from localStorage", e);
+    }
+  }, []);
+
+  // Save settings to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem("teleprompter_presets", JSON.stringify(savedSettings));
+    } catch (e) {
+      console.error("Could not save presets to localStorage", e);
+    }
+  }, [savedSettings]);
+  
+  // Autofocus search input when load popover opens
+  useEffect(() => {
+    if (isLoadPopoverOpen) {
+      setTimeout(() => searchInputRef.current?.focus(), 100);
+    }
+  }, [isLoadPopoverOpen]);
+
 
   // Initialize broadcast channel for presenter mode
   useEffect(() => {
@@ -441,6 +500,51 @@ export default function Home() {
     });
   }, [text]);
 
+  const handleResetSettings = () => {
+    setScrollSpeed(DEFAULT_SETTINGS.scrollSpeed);
+    setFontSize(DEFAULT_SETTINGS.fontSize);
+    setHorizontalMargin(DEFAULT_SETTINGS.horizontalMargin);
+    setVerticalMargin(DEFAULT_SETTINGS.verticalMargin);
+    toast({ title: "Settings Reset", description: "All settings have been reset to their default values." });
+  };
+
+  const handleSaveCurrentSettings = () => {
+    if (!newSettingName.trim()) {
+      toast({ variant: "destructive", title: "Save Error", description: "Please enter a name for your settings." });
+      return;
+    }
+    const newSetting: SavedSetting = {
+      id: Date.now().toString(),
+      name: newSettingName,
+      scrollSpeed,
+      fontSize,
+      horizontalMargin,
+      verticalMargin,
+    };
+    setSavedSettings(prev => [...prev, newSetting]);
+    setIsSavePopoverOpen(false);
+    setNewSettingName('');
+    toast({ title: "Settings Saved", description: `"${newSetting.name}" has been saved.` });
+  };
+
+  const handleLoadSettings = (setting: SavedSetting) => {
+    setScrollSpeed(setting.scrollSpeed);
+    setFontSize(setting.fontSize);
+    setHorizontalMargin(setting.horizontalMargin);
+    setVerticalMargin(setting.verticalMargin);
+    setIsLoadPopoverOpen(false);
+    toast({ title: "Settings Loaded", description: `Applied settings from "${setting.name}".` });
+  };
+  
+  const handleDeleteSetting = (id: string) => {
+    setSavedSettings(prev => prev.filter(s => s.id !== id));
+    toast({ title: "Setting Deleted", description: "The preset has been removed." });
+  };
+
+  const filteredSettings = savedSettings.filter(s =>
+    s.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <main className="flex h-screen flex-col bg-background">
       <div className="grid flex-1 grid-cols-[auto_1fr] gap-4 p-4 min-h-0">
@@ -499,7 +603,101 @@ export default function Home() {
                      {isProcessingAudio && <p className="text-sm text-muted-foreground text-center">Syncing to your voice...</p>}
                      
                     <div className="flex flex-col w-full items-center gap-2 pt-2 border-t">
-                      <p className="text-sm font-medium text-muted-foreground">Prompter Settings</p>
+                      <div className="flex items-center justify-center gap-2 w-full text-sm font-medium text-muted-foreground">
+                        <Popover open={isLoadPopoverOpen} onOpenChange={setIsLoadPopoverOpen}>
+                          <PopoverTrigger asChild>
+                            <Button variant="link" className="p-0 h-auto text-muted-foreground hover:no-underline hover:text-accent-foreground focus-visible:ring-0">
+                                Prompter Settings
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[240px] p-2" align="start">
+                            <div className="grid gap-4">
+                              <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                                <Input
+                                  ref={searchInputRef}
+                                  placeholder="Search presets..."
+                                  value={searchTerm}
+                                  onChange={(e) => setSearchTerm(e.target.value)}
+                                  className="h-9 pl-9 border-none bg-secondary shadow-none focus-visible:ring-0"
+                                />
+                              </div>
+                              <ScrollArea className="h-[200px]">
+                                {filteredSettings.length > 0 ? (
+                                  <div className="space-y-1">
+                                    {filteredSettings.map(setting => (
+                                      <div key={setting.id} className="group flex items-center justify-between rounded-md hover:bg-accent">
+                                        <Button
+                                          variant="ghost"
+                                          className="w-full justify-start font-normal"
+                                          onClick={() => handleLoadSettings(setting)}
+                                        >
+                                          {setting.name}
+                                        </Button>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-7 w-7 opacity-0 group-hover:opacity-100"
+                                                    onClick={() => handleDeleteSetting(setting.id)}
+                                                    >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="right"><p>Delete Preset</p></TooltipContent>
+                                        </Tooltip>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="text-center text-sm text-muted-foreground py-8">No presets found.</p>
+                                )}
+                              </ScrollArea>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="w-5 h-5" onClick={handleResetSettings}>
+                              <RotateCcw className="h-3 w-3" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent><p>Reset to default</p></TooltipContent>
+                        </Tooltip>
+
+                        <Popover open={isSavePopoverOpen} onOpenChange={setIsSavePopoverOpen}>
+                          <PopoverTrigger asChild>
+                            <Button variant="ghost" size="icon" className="w-5 h-5" onClick={() => setNewSettingName(`Settings ${savedSettings.length + 1}`)}>
+                              <Save className="h-3 w-3" />
+                            </Button>
+                          </PopoverTrigger>
+                           <PopoverContent className="w-[200px] p-1"
+                              onPointerDownOutside={(e) => {
+                                // Prevent closing if clicking on the trigger
+                                if ((e.target as HTMLElement).closest('[data-radix-popover-trigger]')) {
+                                  e.preventDefault();
+                                }
+                              }}
+                           >
+                            <div className="flex items-center gap-1">
+                                <Input
+                                    value={newSettingName}
+                                    onChange={(e) => setNewSettingName(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') handleSaveCurrentSettings();
+                                    }}
+                                    className="h-8 border-none bg-transparent shadow-none focus-visible:ring-0"
+                                    placeholder="Preset name..."
+                                />
+                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleSaveCurrentSettings}>
+                                    <Check className="h-4 w-4" />
+                                </Button>
+                            </div>
+                           </PopoverContent>
+                        </Popover>
+                      </div>
                       <div className="flex items-start justify-between w-full px-2">
                         <div className="flex flex-col items-center gap-3">
                           <Popover open={isSpeedPopoverOpen} onOpenChange={setIsSpeedPopoverOpen}>
