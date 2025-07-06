@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
+import type { GoogleSlideContent } from '@/ai/flows/google-drive-flows';
 
 interface PresenterSettings {
   text: string;
@@ -14,7 +15,7 @@ interface PresenterSettings {
   isFlippedVertically: boolean;
   scrollSpeed: number;
   prompterMode: 'text' | 'slides';
-  slides: string[];
+  slides: GoogleSlideContent[];
   currentSlideIndex: number;
 }
 
@@ -134,6 +135,7 @@ export default function PresenterPage() {
   }, []);
 
   useEffect(() => {
+    // In presenter mode, scrolling only happens for text, never for slides/notes.
     if (isPlaying && settings.prompterMode === 'text') {
       startScroll();
     } else {
@@ -179,7 +181,7 @@ export default function PresenterPage() {
                 </div>
                 </div>
             </div>
-        ) : settings.slides.length > 0 ? (
+        ) : settings.slides?.length > 0 ? (
             <div
                 className={cn(
                 "h-full w-full flex items-center justify-center",
@@ -189,7 +191,7 @@ export default function PresenterPage() {
                 )}
             >
                 <img
-                    src={settings.slides[settings.currentSlideIndex]}
+                    src={settings.slides[settings.currentSlideIndex]?.imageUrl}
                     alt={`Slide ${settings.currentSlideIndex + 1}`}
                     className="max-w-full max-h-full object-contain"
                 />

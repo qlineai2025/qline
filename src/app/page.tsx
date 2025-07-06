@@ -61,6 +61,7 @@ import {
   Wand2,
   ChevronLeft,
   ChevronRight,
+  NotebookText,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -122,6 +123,7 @@ export default function Home() {
   const [isEditorExpanded, setIsEditorExpanded] = useState<boolean>(false);
   
   const [prompterMode, setPrompterMode] = useState<'text' | 'slides'>('text');
+  const [slideDisplayMode, setSlideDisplayMode] = useState<'slide' | 'notes'>('slide');
   const [slides, setSlides] = useState<GoogleSlideContent[]>([]);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
 
@@ -240,6 +242,7 @@ export default function Home() {
       prompterMode,
       slides,
       currentSlideIndex,
+      slideDisplayMode,
     };
     try {
         localStorage.setItem("teleprompter_settings", JSON.stringify(settings));
@@ -247,7 +250,7 @@ export default function Home() {
     } catch (e) {
         console.error("Could not write to localStorage", e);
     }
-  }, [text, fontSize, horizontalMargin, verticalMargin, isHighContrast, isFlippedHorizontally, isFlippedVertically, scrollSpeed, prompterMode, slides, currentSlideIndex]);
+  }, [text, fontSize, horizontalMargin, verticalMargin, isHighContrast, isFlippedHorizontally, isFlippedVertically, scrollSpeed, prompterMode, slides, currentSlideIndex, slideDisplayMode]);
 
 
   const handleSave = (setter: React.Dispatch<React.SetStateAction<number>>, value: string, min: number, max: number, popoverSetter: React.Dispatch<React.SetStateAction<boolean>>) => {
@@ -311,15 +314,17 @@ export default function Home() {
     setPrompterMode('text');
     setText(content);
     setSlides([]);
+    setSlideDisplayMode('slide');
     setIsDocPickerOpen(false);
   };
 
   const handleSlideImport = (slideContents: GoogleSlideContent[]) => {
     if (slideContents.length > 0) {
         setPrompterMode('slides');
+        setSlideDisplayMode('slide');
         setSlides(slideContents);
         setCurrentSlideIndex(0);
-        setText(slideContents[0]?.speakerNotes || ''); 
+        setText(slideContents[0]?.speakerNotes || '');
         setIsPlaying(false);
     }
     setIsSlidePickerOpen(false);
@@ -488,23 +493,29 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (isPlaying && prompterMode === 'text') {
+    const isNotesViewScrolling = prompterMode === 'slides' && slideDisplayMode === 'notes';
+    const isTextViewScrolling = prompterMode === 'text';
+
+    if (isPlaying && (isTextViewScrolling || isNotesViewScrolling)) {
       startScroll();
     } else {
       stopScroll();
     }
     return stopScroll;
-  }, [isPlaying, startScroll, stopScroll, prompterMode]);
+  }, [isPlaying, startScroll, stopScroll, prompterMode, slideDisplayMode]);
 
 
   useEffect(() => {
-    if (isPlaying && isVoiceControlOn && prompterMode === 'text') {
+    const isNotesViewVoiceControl = prompterMode === 'slides' && slideDisplayMode === 'notes';
+    const isTextViewVoiceControl = prompterMode === 'text';
+    
+    if (isPlaying && isVoiceControlOn && (isTextViewVoiceControl || isNotesViewVoiceControl)) {
       startRecording();
     } else {
       stopRecording();
     }
     return stopRecording;
-  }, [isPlaying, isVoiceControlOn, startRecording, stopRecording, prompterMode]);
+  }, [isPlaying, isVoiceControlOn, startRecording, stopRecording, prompterMode, slideDisplayMode]);
 
   useEffect(() => {
     if (displayRef.current) {
@@ -532,7 +543,7 @@ export default function Home() {
   }, [isMaximized, isSpeedPopoverOpen, isFontSizePopoverOpen, isHorizontalMarginPopoverOpen, isVerticalMarginPopoverOpen, contextMenu]);
 
   const handlePlayPause = () => {
-    if (prompterMode === 'slides') return;
+    if (prompterMode === 'slides' && slideDisplayMode === 'slide') return;
     const newIsPlaying = !isPlaying;
     if (newIsPlaying) {
       setIsMaximized(true);
@@ -727,6 +738,11 @@ export default function Home() {
     }
   }, [scrollSpeed, fontSize, horizontalMargin, verticalMargin, loadedSettingName, savedSettings]);
 
+  const playPauseDisabled = prompterMode === 'slides' && slideDisplayMode === 'slide';
+  const voiceControlDisabled = playPauseDisabled;
+  const speedSliderDisabled = isVoiceControlOn || playPauseDisabled;
+
+
   return (
     <main className="flex h-screen flex-col bg-background" onClickCapture={() => { if (contextMenu) setContextMenu(null)}}>
       <div className="grid flex-1 grid-cols-[auto_1fr] gap-4 p-4 min-h-0">
@@ -758,7 +774,7 @@ export default function Home() {
                         </Button>
                       )}
                       
-                      <Button onClick={handlePlayPause} className="w-full" disabled={prompterMode === 'slides'}>
+                      <Button onClick={handlePlayPause} className="w-full" disabled={playPauseDisabled}>
                         {isPlaying ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
                         {isPlaying ? "Pause" : "Play"}
                       </Button>
@@ -767,7 +783,7 @@ export default function Home() {
                     <div className="flex items-center justify-center pt-2 border-t w-full">
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" onClick={() => setIsVoiceControlOn(!isVoiceControlOn)} disabled={prompterMode === 'slides'}>
+                                <Button variant="ghost" size="icon" onClick={() => setIsVoiceControlOn(!isVoiceControlOn)} disabled={voiceControlDisabled}>
                                     <Mic className={cn(isVoiceControlOn && "text-accent")} />
                                 </Button>
                             </TooltipTrigger>
@@ -781,6 +797,16 @@ export default function Home() {
                             </TooltipTrigger>
                             <TooltipContent><p>Assist Mode</p></TooltipContent>
                         </Tooltip>
+                        {prompterMode === 'slides' && (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" onClick={() => setSlideDisplayMode(prev => prev === 'slide' ? 'notes' : 'slide')}>
+                                        <NotebookText className={cn(slideDisplayMode === 'notes' && "text-accent")} />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent><p>{slideDisplayMode === 'slide' ? 'Show Speaker Notes' : 'Show Slide'}</p></TooltipContent>
+                            </Tooltip>
+                        )}
                     </div>
                      {isProcessingAudio && <p className="text-sm text-muted-foreground text-center">Syncing to your voice...</p>}
                      
@@ -885,7 +911,7 @@ export default function Home() {
                                <Tooltip>
                                 <TooltipTrigger asChild>
                                   <PopoverTrigger asChild>
-                                    <Button variant="ghost" size="sm" className="w-7 h-7 p-0" disabled={isVoiceControlOn || prompterMode === 'slides'}><Gauge className="h-4 w-4"/></Button>
+                                    <Button variant="ghost" size="sm" className="w-7 h-7 p-0" disabled={speedSliderDisabled}><Gauge className="h-4 w-4"/></Button>
                                   </PopoverTrigger>
                                 </TooltipTrigger>
                                 <TooltipContent><p>Scroll Speed: {scrollSpeed.toFixed(0)}</p></TooltipContent>
@@ -913,7 +939,7 @@ export default function Home() {
                             step={1}
                             value={[scrollSpeed]}
                             onValueChange={(value) => setScrollSpeed(value[0])}
-                            disabled={isVoiceControlOn || prompterMode === 'slides'}
+                            disabled={speedSliderDisabled}
                             className="h-24"
                           />
                         </div>
@@ -1109,45 +1135,81 @@ export default function Home() {
                   </div>
                 )}
                  {prompterMode === 'slides' && slides.length > 0 && (
-                  <div
-                      className={cn(
-                          "h-full w-full flex items-center justify-center",
+                  <>
+                    {slideDisplayMode === 'slide' ? (
+                       <div
+                          className={cn(
+                              "h-full w-full flex items-center justify-center",
+                              isHighContrast && "bg-black",
+                              isFlippedHorizontally && "scale-x-[-1]",
+                              isFlippedVertically && "scale-y-[-1]"
+                          )}
+                      >
+                          <img
+                              src={slides[currentSlideIndex]?.imageUrl}
+                              alt={`Slide ${currentSlideIndex + 1}`}
+                              className="max-w-full max-h-full object-contain"
+                          />
+                      </div>
+                    ) : (
+                      <div
+                        ref={displayRef}
+                        className={cn(
+                          "h-full overflow-y-auto",
                           isHighContrast && "bg-black",
                           isFlippedHorizontally && "scale-x-[-1]",
                           isFlippedVertically && "scale-y-[-1]"
-                      )}
-                  >
-                      <img
-                          src={slides[currentSlideIndex]?.imageUrl}
-                          alt={`Slide ${currentSlideIndex + 1}`}
-                          className="max-w-full max-h-full object-contain"
-                      />
-                  </div>
-                )}
-                {prompterMode === 'slides' && (
-                    <>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={handlePrevSlide}
-                            disabled={currentSlideIndex === 0}
-                            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 h-12 w-12 opacity-50 hover:opacity-100 bg-black/20 hover:bg-black/40 text-white"
+                        )}
+                        style={{
+                          paddingLeft: `${horizontalMargin}%`,
+                          paddingRight: `${horizontalMargin}%`,
+                        }}
+                      >
+                        <div
+                          className="w-full min-h-full flex justify-center items-center m-auto"
+                           style={{
+                            paddingTop: `${verticalMargin}%`,
+                            paddingBottom: `${verticalMargin}%`,
+                          }}
                         >
-                            <ChevronLeft className="h-8 w-8" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={handleNextSlide}
-                            disabled={currentSlideIndex === slides.length - 1}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 h-12 w-12 opacity-50 hover:opacity-100 bg-black/20 hover:bg-black/40 text-white"
-                        >
-                            <ChevronRight className="h-8 w-8" />
-                        </Button>
-                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 bg-black/50 text-white text-sm px-3 py-1 rounded-full">
-                            {currentSlideIndex + 1} / {slides.length}
+                          <div
+                            className={cn(
+                              "whitespace-pre-wrap break-words m-auto",
+                              isHighContrast ? "text-white" : "text-foreground"
+                            )}
+                            style={{
+                              fontSize: `${fontSize}px`,
+                              lineHeight: 1.5,
+                            }}
+                          >
+                            {processedText()}
+                          </div>
                         </div>
-                    </>
+                      </div>
+                    )}
+                    
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handlePrevSlide}
+                        disabled={currentSlideIndex === 0}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 h-12 w-12 opacity-50 hover:opacity-100 bg-black/20 hover:bg-black/40 text-white"
+                    >
+                        <ChevronLeft className="h-8 w-8" />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleNextSlide}
+                        disabled={currentSlideIndex === slides.length - 1}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 h-12 w-12 opacity-50 hover:opacity-100 bg-black/20 hover:bg-black/40 text-white"
+                    >
+                        <ChevronRight className="h-8 w-8" />
+                    </Button>
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 bg-black/50 text-white text-sm px-3 py-1 rounded-full">
+                        {currentSlideIndex + 1} / {slides.length}
+                    </div>
+                  </>
                 )}
               </CardContent>
             </Card>
