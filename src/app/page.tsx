@@ -98,12 +98,10 @@ export default function Home() {
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
-  const scrollSpeedRef = useRef<number>(scrollSpeed);
-  scrollSpeedRef.current = scrollSpeed;
-
+  const scrollSpeedRef = useRef(scrollSpeed);
   const animationFrameRef = useRef<number | null>(null);
-  const lastTimeRef = useRef<number | null>(null);
 
+  useEffect(() => { scrollSpeedRef.current = scrollSpeed; }, [scrollSpeed]);
   useEffect(() => { setSpeedInput(String(scrollSpeed)) }, [scrollSpeed]);
   useEffect(() => { setFontSizeInput(String(fontSize)) }, [fontSize]);
   useEffect(() => { setHorizontalMarginInput(String(horizontalMargin)) }, [horizontalMargin]);
@@ -191,7 +189,7 @@ export default function Home() {
     
     try {
       const audioDataUri = await blobToDataUri(audioBlob);
-      const result = await adjustScrollSpeed({ audioDataUri, currentScrollSpeed: scrollSpeed });
+      const result = await adjustScrollSpeed({ audioDataUri, currentScrollSpeed: scrollSpeedRef.current });
       const newSpeed = Math.max(0, result.adjustedScrollSpeed);
       setScrollSpeed(newSpeed);
       toast({
@@ -209,7 +207,7 @@ export default function Home() {
     } finally {
       setIsProcessingAudio(false);
     }
-  }, [scrollSpeed, toast]);
+  }, [toast]);
 
   const startRecording = useCallback(() => {
     navigator.mediaDevices.getUserMedia({ audio: true })
@@ -253,36 +251,36 @@ export default function Home() {
     audioChunksRef.current = [];
   }, []);
 
-  const scroll = useCallback((time: number) => {
-    if (!displayRef.current) return;
-
-    if (lastTimeRef.current === null) {
-      lastTimeRef.current = time;
-      animationFrameRef.current = requestAnimationFrame(scroll);
-      return;
-    }
-
-    const deltaTime = time - lastTimeRef.current;
-    lastTimeRef.current = time;
-
-    const currentDisplay = displayRef.current;
-    if (currentDisplay.scrollHeight > currentDisplay.clientHeight) {
-      const pixelsPerSecond = scrollSpeedRef.current;
-      const scrollAmount = (pixelsPerSecond * deltaTime) / 1000;
-      currentDisplay.scrollTop += scrollAmount;
-    }
-
-    if (currentDisplay.scrollTop + currentDisplay.clientHeight >= currentDisplay.scrollHeight - 1) {
-      setIsPlaying(false);
-    } else {
-      animationFrameRef.current = requestAnimationFrame(scroll);
-    }
-  }, []);
-
   useEffect(() => {
+    let lastTime: number | null = null;
+    
+    const animationLoop = (currentTime: number) => {
+      if (!displayRef.current) return;
+      if (lastTime === null) {
+        lastTime = currentTime;
+        animationFrameRef.current = requestAnimationFrame(animationLoop);
+        return;
+      }
+      
+      const deltaTime = currentTime - lastTime;
+      lastTime = currentTime;
+      
+      const currentDisplay = displayRef.current;
+      if (currentDisplay.scrollHeight > currentDisplay.clientHeight) {
+        const pixelsPerSecond = scrollSpeedRef.current;
+        const scrollAmount = (pixelsPerSecond * deltaTime) / 1000;
+        currentDisplay.scrollTop += scrollAmount;
+      }
+
+      if (currentDisplay.scrollTop + currentDisplay.clientHeight >= currentDisplay.scrollHeight - 1) {
+        setIsPlaying(false);
+      } else {
+        animationFrameRef.current = requestAnimationFrame(animationLoop);
+      }
+    };
+
     if (isPlaying) {
-      lastTimeRef.current = null;
-      animationFrameRef.current = requestAnimationFrame(scroll);
+      animationFrameRef.current = requestAnimationFrame(animationLoop);
     } else {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
@@ -296,7 +294,7 @@ export default function Home() {
         animationFrameRef.current = null;
       }
     };
-  }, [isPlaying, scroll]);
+  }, [isPlaying]);
 
   useEffect(() => {
     if (isPlaying && isVoiceControlOn) {
