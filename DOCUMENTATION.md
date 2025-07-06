@@ -95,3 +95,9 @@ The script editor at the bottom of the screen is intentionally minimalist.
 *   **Headerless Design**: The `<CardHeader>` and `<CardTitle>` have been removed to maximize the vertical space available for the `<Textarea>`.
 *   **Full-Width Layout**: It spans the entire width of the application window, providing an ample and comfortable area for script editing.
 *   **Clean Integration**: By removing the outer `<Card>` border and background, the `<Textarea>` component integrates directly into the main application background, feeling less like a separate widget and more like a core part of the layout.
+
+#### 5. Smooth, Time-Based Scrolling Animation
+To ensure a fluid and professional teleprompter experience, the scrolling is driven by a custom animation loop.
+*   **`requestAnimationFrame`**: The application uses `requestAnimationFrame` for all scrolling animations. This is a browser API specifically designed for creating smooth, efficient animations that are synchronized with the display's refresh rate, which prevents stuttering and tearing.
+*   **Time-Based Calculation**: The scroll speed is not based on fixed pixel increments per frame. Instead, it is calculated based on the actual time elapsed between frames (`deltaTime`). This ensures that the scrolling speed remains consistent and accurate, regardless of the device's performance or screen refresh rate.
+*   **Independent of CSS**: The animation logic is handled entirely in JavaScript, avoiding conflicts with CSS properties like `scroll-behavior: smooth`. This gives us precise programmatic control over the scrolling, allowing for real-time speed adjustments from the slider without any visual glitches.
