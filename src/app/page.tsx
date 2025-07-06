@@ -484,11 +484,11 @@ export default function Home() {
           <div className="flex-1 min-h-0 relative">
             <Card
               className={cn(
-                "h-full flex flex-col",
+                "h-full flex flex-col rounded-lg",
                 isMaximized && "rounded-none border-none"
               )}
             >
-              <CardContent className="p-0 flex-grow overflow-hidden">
+              <CardContent className="p-0 flex-grow overflow-hidden rounded-lg">
                 <div
                   ref={displayRef}
                   className={cn(
@@ -543,3 +543,5 @@ export default function Home() {
     </main>
   );
 }
+
+    
