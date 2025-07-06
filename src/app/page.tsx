@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { adjustScrollSpeed } from "@/ai/flows/adjust-scroll-speed";
+import { trackSpeechPosition } from "@/ai/flows/track-speech-position";
 import { cn } from "@/lib/utils";
 
 import { useAuth } from "@/components/auth-provider";
@@ -198,7 +198,7 @@ export default function Home() {
     });
   };
 
-  const handleAdjustSpeed = useCallback(async () => {
+  const updatePositionFromSpeech = useCallback(async () => {
     if (audioChunksRef.current.length === 0) return;
     setIsProcessingAudio(true);
     
@@ -207,25 +207,24 @@ export default function Home() {
     
     try {
       const audioDataUri = await blobToDataUri(audioBlob);
-      const result = await adjustScrollSpeed({ audioDataUri, currentScrollSpeed: scrollSpeedRef.current });
-      const newSpeed = Math.max(0, result.adjustedScrollSpeed);
-      setScrollSpeed(newSpeed);
-      toast({
-        title: "Speed Adjusted",
-        description: `Voice analysis set scroll speed to ${newSpeed.toFixed(0)}.`,
-      });
-    } catch (error)
-    {
-      console.error("Error adjusting speed:", error);
+      const { lastSpokenWordIndex } = await trackSpeechPosition({ audioDataUri, scriptText: text });
+      
+      const targetWord = document.getElementById(`word-${lastSpokenWordIndex}`);
+      if (targetWord) {
+        targetWord.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+
+    } catch (error) {
+      console.error("Error tracking speech position:", error);
       toast({
         variant: "destructive",
         title: "AI Error",
-        description: "Could not adjust speed based on audio.",
+        description: "Could not track speech position.",
       });
     } finally {
       setIsProcessingAudio(false);
     }
-  }, [toast]);
+  }, [text, toast]);
 
   const startRecording = useCallback(() => {
     navigator.mediaDevices.getUserMedia({ audio: true })
@@ -236,13 +235,17 @@ export default function Home() {
             audioChunksRef.current.push(event.data);
           }
         };
-        mediaRecorderRef.current.onstop = handleAdjustSpeed;
+        mediaRecorderRef.current.onstop = updatePositionFromSpeech;
         mediaRecorderRef.current.start();
 
         if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
         recordingIntervalRef.current = setInterval(() => {
-          mediaRecorderRef.current?.stop();
-          mediaRecorderRef.current?.start();
+          if (mediaRecorderRef.current?.state === "recording") {
+            mediaRecorderRef.current.stop();
+          }
+          if (mediaRecorderRef.current?.state === "inactive") {
+            mediaRecorderRef.current.start();
+          }
         }, 5000);
 
       }).catch(err => {
@@ -254,7 +257,7 @@ export default function Home() {
         });
         setIsVoiceControlOn(false);
       });
-  }, [handleAdjustSpeed, toast]);
+  }, [updatePositionFromSpeech, toast]);
 
   const stopRecording = useCallback(() => {
     if (recordingIntervalRef.current) {
@@ -270,7 +273,7 @@ export default function Home() {
   }, []);
 
   const scrollAnimation = useCallback(() => {
-    if (!isPlaying || !displayRef.current) {
+    if (!isPlaying || isVoiceControlOn || !displayRef.current) {
         if (animationFrameRef.current) {
             cancelAnimationFrame(animationFrameRef.current);
             animationFrameRef.current = null;
@@ -278,12 +281,19 @@ export default function Home() {
         return;
     }
 
+    let lastTime: number | null = null;
     const animate = (timestamp: number) => {
+        if (!lastTime) {
+            lastTime = timestamp;
+        }
+        const deltaTime = timestamp - lastTime;
+        lastTime = timestamp;
+
         if (!displayRef.current) return;
 
         const currentDisplay = displayRef.current;
         if (currentDisplay.scrollHeight > currentDisplay.clientHeight) {
-            currentDisplay.scrollTop += scrollSpeedRef.current * (1 / 60);
+            currentDisplay.scrollTop += (scrollSpeedRef.current / 60) * (deltaTime / (1000 / 60));
         }
 
         if (currentDisplay.scrollTop + currentDisplay.clientHeight >= currentDisplay.scrollHeight - 1) {
@@ -294,10 +304,12 @@ export default function Home() {
     };
     animationFrameRef.current = requestAnimationFrame(animate);
 
-  }, [isPlaying]);
+  }, [isPlaying, isVoiceControlOn]);
 
   useEffect(() => {
-    scrollAnimation();
+    if (isPlaying) {
+      scrollAnimation();
+    }
     return () => {
         if (animationFrameRef.current) {
             cancelAnimationFrame(animationFrameRef.current);
@@ -352,6 +364,17 @@ export default function Home() {
   };
   
   const popoverContentClass = "w-[150px] p-2";
+  
+  const processedText = useCallback(() => {
+    // Split by space to identify words, but render with original whitespace for layout.
+    // We wrap each word in a span with a unique ID for voice tracking.
+    const words = text.split(' ');
+    return words.map((word, index) => (
+      <span key={index} id={`word-${index}`}>
+        {word}{' '}
+      </span>
+    ));
+  }, [text]);
 
   return (
     <main className="flex h-screen flex-col bg-background">
@@ -424,7 +447,7 @@ export default function Home() {
                             <TooltipContent><p>Flip Vertical</p></TooltipContent>
                         </Tooltip>
                     </div>
-                     {isProcessingAudio && <p className="text-sm text-muted-foreground text-center">Adjusting speed...</p>}
+                     {isProcessingAudio && <p className="text-sm text-muted-foreground text-center">Syncing to your voice...</p>}
 
                     <div className="flex items-start justify-between pt-2 border-t w-full">
                         <div className="flex flex-col items-center gap-3">
@@ -432,7 +455,7 @@ export default function Home() {
                                <Tooltip>
                                 <TooltipTrigger asChild>
                                   <PopoverTrigger asChild>
-                                    <Button variant="ghost" size="sm" className="w-7 h-7 p-0"><Gauge className="h-4 w-4"/></Button>
+                                    <Button variant="ghost" size="sm" className="w-7 h-7 p-0" disabled={isVoiceControlOn}><Gauge className="h-4 w-4"/></Button>
                                   </PopoverTrigger>
                                 </TooltipTrigger>
                                 <TooltipContent><p>Scroll Speed: {scrollSpeed.toFixed(0)}</p></TooltipContent>
@@ -648,7 +671,7 @@ export default function Home() {
                         lineHeight: 1.5,
                       }}
                     >
-                      {text}
+                      {processedText()}
                     </div>
                   </div>
                 </div>
