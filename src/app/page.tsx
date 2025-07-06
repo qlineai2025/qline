@@ -10,7 +10,7 @@ import { auth, googleProvider } from "@/lib/firebase";
 import { signInWithPopup, signOut } from "firebase/auth";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
@@ -611,39 +611,41 @@ export default function Home() {
                 <div
                   ref={displayRef}
                   className={cn(
-                    "h-full overflow-y-auto scroll-smooth flex justify-center",
+                    "h-full overflow-y-auto scroll-smooth flex",
                     isHighContrast && "bg-black",
                     isFlippedHorizontally && "scale-x-[-1]",
                     isFlippedVertically && "scale-y-[-1]"
                   )}
-                  style={{
-                    paddingTop: `${verticalMargin}%`,
-                    paddingBottom: `${verticalMargin}%`,
-                  }}
                 >
                   <div
-                    className={cn(
-                      "whitespace-pre-wrap break-words",
-                      isHighContrast ? "text-white" : "text-foreground"
-                    )}
-                    style={{
-                      fontSize: `${fontSize}px`,
-                      lineHeight: 1.5,
-                      width: `${100 - horizontalMargin * 2}%`,
+                    className="w-full flex"
+                     style={{
+                      padding: `${verticalMargin}% ${horizontalMargin}%`,
                     }}
                   >
-                    {text}
+                    <div
+                      className={cn(
+                        "whitespace-pre-wrap break-words m-auto",
+                        isHighContrast ? "text-white" : "text-foreground"
+                      )}
+                      style={{
+                        fontSize: `${fontSize}px`,
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {text}
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
-             <Button 
-                onClick={() => setIsMaximized(!isMaximized)} 
-                variant={isHighContrast ? 'ghost' : 'outline'}
-                size="icon" 
+             <Button
+                onClick={() => setIsMaximized(!isMaximized)}
+                variant="outline"
+                size="icon"
                 className={cn(
                   "absolute bottom-4 right-4 z-10",
-                  isHighContrast && "bg-white text-black hover:bg-white/80"
+                  isHighContrast && "bg-black text-white hover:bg-black/80 border border-white"
                 )}
               >
                {isMaximized ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
@@ -661,4 +663,5 @@ export default function Home() {
       </div>
     </main>
   );
-}
+
+    
