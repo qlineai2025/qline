@@ -53,8 +53,10 @@ import {
   Check,
   Search,
   Trash2,
-  Sparkles,
   Loader2,
+  SpellCheck,
+  PenSquare,
+  WrapText,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -183,18 +185,6 @@ export default function Home() {
   // Sync loaded setting name with current settings
   useEffect(() => {
     const currentSettings = { scrollSpeed, fontSize, horizontalMargin, verticalMargin };
-
-    const isDefault =
-        currentSettings.scrollSpeed === DEFAULT_SETTINGS.scrollSpeed &&
-        currentSettings.fontSize === DEFAULT_SETTINGS.fontSize &&
-        currentSettings.horizontalMargin === DEFAULT_SETTINGS.horizontalMargin &&
-        currentSettings.verticalMargin === DEFAULT_SETTINGS.verticalMargin;
-
-    if (isDefault) {
-        setLoadedSettingName(null);
-        return;
-    }
-
     const matchingSetting = savedSettings.find(s =>
         s.scrollSpeed === scrollSpeed &&
         s.fontSize === fontSize &&
@@ -1089,7 +1079,7 @@ export default function Home() {
             placeholder="Paste your script here..."
             value={text}
             onChange={(e) => setText(e.target.value)}
-            className="h-32 text-base resize-none w-full pr-12"
+            className="h-32 text-base resize-none w-full pr-32"
             disabled={isAiEditing}
           />
           <div className="absolute bottom-2 right-2 flex items-center gap-1">
@@ -1098,22 +1088,33 @@ export default function Home() {
               ) : (
                 <TooltipProvider>
                   <Tooltip>
-                    <DropdownMenu>
-                      <TooltipTrigger asChild>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-accent-foreground">
-                                <Sparkles className="h-5 w-5" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                      </TooltipTrigger>
-                      <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleAiAssist('fix')}>Fix Spelling & Grammar</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleAiAssist('rewrite')}>Rewrite</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleAiAssist('format')}>Format for Readability</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-accent-foreground" onClick={() => handleAiAssist('fix')}>
+                        <SpellCheck className="h-5 w-5" />
+                      </Button>
+                    </TooltipTrigger>
                     <TooltipContent side="top">
-                      <p>AI Script Assistant</p>
+                      <p>Fix Spelling & Grammar</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-accent-foreground" onClick={() => handleAiAssist('rewrite')}>
+                        <PenSquare className="h-5 w-5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      <p>Rewrite</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-accent-foreground" onClick={() => handleAiAssist('format')}>
+                        <WrapText className="h-5 w-5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      <p>Format for Readability</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
