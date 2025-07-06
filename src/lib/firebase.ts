@@ -20,6 +20,9 @@ if (firebaseConfig.apiKey) {
     app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
     auth = getAuth(app);
     googleProvider = new GoogleAuthProvider();
+    // Request access to read Google Docs and list Google Drive files.
+    googleProvider.addScope("https://www.googleapis.com/auth/documents.readonly");
+    googleProvider.addScope("https://www.googleapis.com/auth/drive.readonly");
   } catch (error) {
     console.error("Firebase initialization error:", error);
     // If initialization fails, ensure auth-related objects are null.
