@@ -26,7 +26,10 @@ Located in the top-left of the control panel:
 
 These are icon-based buttons in the control panel. Their color changes when active, and you can hover over them to see a tooltip explaining their function.
 
-*   **Voice Control (Mic Icon)**: When enabled (on by default), the app listens to your voice and automatically scrolls to keep the word you are currently speaking in the center of the screen. This provides a hands-free experience where the prompter perfectly follows your natural reading pace. When disabled, you must control scrolling manually with the speed slider.
+*   **Voice Control (Mic Icon)**: When enabled (on by default), the app uses an advanced, AI-powered hybrid system for a seamless hands-free experience.
+    *   **Pace Matching**: It intelligently anticipates your reading speed, and the teleprompter scrolls continuously to match your pace.
+    *   **Position Tracking**: Every few seconds, it also pinpoints the exact word you're saying and gently re-centers the screen, ensuring you never lose your place.
+    This makes the prompter feel incredibly responsive and synchronized with your natural voice. When disabled, you must control scrolling manually with the speed slider.
 *   **High Contrast (Contrast Icon)**: Toggles the display between standard mode (black text on a light background) and high-contrast mode (white text on a black background). It is on by default for maximum readability.
 *   **Flip Horizontal (ArrowLeftRight Icon)**: Mirrors the prompter text horizontally. This is essential for use with physical teleprompter hardware that uses a mirror.
 *   **Flip Vertical (ArrowUpDown Icon)**: Flips the prompter text vertically.
@@ -101,3 +104,12 @@ To ensure a fluid and professional teleprompter experience, the scrolling is dri
 *   **`requestAnimationFrame`**: The application uses `requestAnimationFrame` for all scrolling animations. This is a browser API specifically designed for creating smooth, efficient animations that are synchronized with the display's refresh rate, which prevents stuttering and tearing.
 *   **Time-Based Calculation**: The scroll speed is not based on fixed pixel increments per frame. Instead, it is calculated based on the actual time elapsed between frames (`deltaTime`). This ensures that the scrolling speed remains consistent and accurate, regardless of the device's performance or screen refresh rate.
 *   **Independent of CSS**: The animation logic is handled entirely in JavaScript, avoiding conflicts with CSS properties like `scroll-behavior: smooth`. This gives us precise programmatic control over the scrolling, allowing for real-time speed adjustments from the slider without any visual glitches.
+
+#### 6. AI-Powered Voice Control
+The voice control feature is a hybrid system designed for maximum responsiveness.
+*   **Continuous Scrolling**: The app maintains a constant, smooth scroll based on a target speed.
+*   **AI-Powered Corrections**: Every two seconds, an audio snippet of the user's voice is sent to a Genkit AI flow (`trackSpeechPosition`).
+*   **Dual Output**: This AI flow returns two key pieces of information:
+    1.  `adjustedScrollSpeed`: An updated scroll speed based on the user's current reading pace.
+    2.  `lastSpokenWordIndex`: The precise index of the last word spoken in the script.
+*   **Seamless Updates**: The application uses the `adjustedScrollSpeed` to update the continuous scrolling animation, and simultaneously performs a smooth `scrollIntoView` to re-center the prompter on the `lastSpokenWordIndex`. This dual-correction approach ensures the teleprompter is always in sync with the speaker in both speed and position.
