@@ -1,10 +1,10 @@
-# AutoScroll Teleprompter: User Manual & Design Guide
+# CuePilot AI: User Manual & Design Guide
 
-This document provides a complete guide to the features, design patterns, and functionality of the AutoScroll Teleprompter application.
+This document provides a complete guide to the features, design patterns, and functionality of the CuePilot AI application.
 
 ## 1. User Manual: How to Use the App
 
-This guide will walk you through all the features of the AutoScroll Teleprompter.
+This guide will walk you through all the features of CuePilot AI.
 
 ### Getting Started
 

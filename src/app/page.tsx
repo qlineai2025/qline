@@ -73,7 +73,7 @@ import { GoogleSlidePicker } from "@/components/google-slide-picker";
 import { GoogleSlideContent } from "@/ai/flows/google-drive-flows";
 
 
-const DEFAULT_TEXT = `Welcome to AutoScroll Teleprompter.
+const DEFAULT_TEXT = `Welcome to CuePilot AI.
 
 You can start by pasting your script here.
 

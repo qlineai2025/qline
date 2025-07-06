@@ -4,8 +4,8 @@ import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from '@/components/auth-provider';
 
 export const metadata: Metadata = {
-  title: 'AutoScroll Teleprompter',
-  description: 'A teleprompter that scrolls automatically based on your voice.',
+  title: 'CuePilot AI',
+  description: 'Your intelligent presentation and teleprompter co-pilot, powered by AI.',
 };
 
 export default function RootLayout({
