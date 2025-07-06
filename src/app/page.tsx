@@ -830,8 +830,8 @@ export default function Home() {
     <main className="flex h-screen flex-col bg-background" onClickCapture={() => { if (contextMenu) setContextMenu(null)}}>
       <div className="grid flex-1 grid-cols-[auto_1fr] gap-4 p-4 min-h-0">
         <div className="h-full overflow-y-auto">
-            <Card className="w-[280px]">
-              <CardContent className="flex flex-col items-center gap-4 p-2">
+            <Card className="w-[280px] h-full flex flex-col">
+              <CardContent className="flex flex-col items-center gap-4 p-2 flex-1">
                  <TooltipProvider>
                     <div className="flex flex-col items-center justify-center gap-2 w-full">
                       {loading ? (
@@ -893,7 +893,7 @@ export default function Home() {
                     </div>
                      {isProcessingAudio && <p className="text-sm text-muted-foreground text-center">Syncing to your voice...</p>}
                      
-                    <div className="flex flex-col w-full items-center gap-2 pt-2 border-t">
+                    <div className="flex flex-col w-full items-center gap-2 pt-2 border-t flex-1">
                       <div className="flex items-center justify-center gap-2 w-full text-sm font-medium text-muted-foreground">
                         <Popover open={isLoadPopoverOpen} onOpenChange={setIsLoadPopoverOpen}>
                           <PopoverTrigger asChild>
@@ -988,7 +988,7 @@ export default function Home() {
                            </PopoverContent>
                         </Popover>
                       </div>
-                      <div className="flex items-start justify-between w-full px-2">
+                      <div className="flex flex-1 items-stretch justify-between w-full px-2">
                         <div className="flex flex-col items-center gap-3">
                           <Popover open={isSpeedPopoverOpen} onOpenChange={setIsSpeedPopoverOpen}>
                                <Tooltip>
@@ -1023,7 +1023,6 @@ export default function Home() {
                             value={[scrollSpeed]}
                             onValueChange={(value) => setScrollSpeed(value[0])}
                             disabled={speedSliderDisabled}
-                            className="h-24"
                           />
                         </div>
                         <div className="flex flex-col items-center gap-3">
@@ -1059,7 +1058,6 @@ export default function Home() {
                             step={1}
                             value={[fontSize]}
                             onValueChange={(value) => setFontSize(value[0])}
-                            className="h-24"
                           />
                         </div>
                         <div className="flex flex-col items-center gap-3">
@@ -1095,7 +1093,6 @@ export default function Home() {
                             step={1}
                             value={[horizontalMargin]}
                             onValueChange={(value) => setHorizontalMargin(value[0])}
-                            className="h-24"
                           />
                         </div>
                         <div className="flex flex-col items-center gap-3">
@@ -1131,7 +1128,6 @@ export default function Home() {
                             step={1}
                             value={[verticalMargin]}
                             onValueChange={(value) => setVerticalMargin(value[0])}
-                            className="h-24"
                           />
                         </div>
                       </div>
