@@ -10,7 +10,7 @@ import { auth, googleProvider } from "@/lib/firebase";
 import { signInWithPopup, signOut } from "firebase/auth";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
@@ -29,13 +29,9 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Play,
   Pause,
@@ -108,12 +104,11 @@ export default function Home() {
   useEffect(() => { setHorizontalMarginInput(String(horizontalMargin)) }, [horizontalMargin]);
   useEffect(() => { setVerticalMarginInput(String(verticalMargin)) }, [verticalMargin]);
 
-  const handleSave = (setter: React.Dispatch<React.SetStateAction<number>>, value: string, min: number, max: number, closeDialog: React.Dispatch<React.SetStateAction<boolean>>) => {
+  const handleSave = (setter: React.Dispatch<React.SetStateAction<number>>, value: string, min: number, max: number) => {
     const numValue = parseInt(value, 10);
     if (!isNaN(numValue) && numValue >= min && numValue <= max) {
       setter(numValue);
     }
-    closeDialog(false);
   };
 
   const handleSignIn = async () => {
@@ -396,7 +391,10 @@ export default function Home() {
 
                     <div className="flex items-start justify-around gap-4 pt-2 border-t w-full">
                         <div className="flex flex-col items-center gap-3">
-                          <Dialog open={isSpeedDialogOpen} onOpenChange={setIsSpeedDialogOpen}>
+                          <Dialog open={isSpeedDialogOpen} onOpenChange={(isOpen) => {
+                                if (!isOpen) handleSave(setScrollSpeed, speedInput, 0, 100);
+                                setIsSpeedDialogOpen(isOpen);
+                            }}>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <DialogTrigger asChild>
@@ -405,32 +403,21 @@ export default function Home() {
                               </TooltipTrigger>
                               <TooltipContent><p>Scroll Speed: {scrollSpeed.toFixed(0)}</p></TooltipContent>
                             </Tooltip>
-                            <DialogContent className="sm:max-w-[280px]">
-                              <DialogHeader>
-                                <DialogTitle>Set Scroll Speed</DialogTitle>
-                              </DialogHeader>
-                              <div className="grid gap-4 py-4">
-                                <div className="grid grid-cols-3 items-center gap-4">
-                                  <Label htmlFor="speed-input" className="text-right">Speed</Label>
+                            <DialogContent className="sm:max-w-[150px] p-2">
                                   <Input
                                     id="speed-input"
                                     type="number"
                                     value={speedInput}
                                     onChange={(e) => setSpeedInput(e.target.value)}
-                                    className="col-span-2"
                                     min={0}
                                     max={100}
                                     onKeyDown={(e) => {
                                       if (e.key === 'Enter') {
-                                        handleSave(setScrollSpeed, speedInput, 0, 100, setIsSpeedDialogOpen);
+                                        handleSave(setScrollSpeed, speedInput, 0, 100);
+                                        setIsSpeedDialogOpen(false);
                                       }
                                     }}
                                   />
-                                </div>
-                              </div>
-                              <DialogFooter>
-                                <Button onClick={() => handleSave(setScrollSpeed, speedInput, 0, 100, setIsSpeedDialogOpen)}>Save</Button>
-                              </DialogFooter>
                             </DialogContent>
                           </Dialog>
                           <Slider
@@ -446,7 +433,10 @@ export default function Home() {
                           />
                         </div>
                         <div className="flex flex-col items-center gap-3">
-                           <Dialog open={isFontSizeDialogOpen} onOpenChange={setIsFontSizeDialogOpen}>
+                           <Dialog open={isFontSizeDialogOpen} onOpenChange={(isOpen) => {
+                                if (!isOpen) handleSave(setFontSize, fontSizeInput, 12, 120);
+                                setIsFontSizeDialogOpen(isOpen);
+                            }}>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <DialogTrigger asChild>
@@ -455,32 +445,21 @@ export default function Home() {
                               </TooltipTrigger>
                               <TooltipContent><p>Font Size: {fontSize}px</p></TooltipContent>
                             </Tooltip>
-                            <DialogContent className="sm:max-w-[280px]">
-                              <DialogHeader>
-                                <DialogTitle>Set Font Size</DialogTitle>
-                              </DialogHeader>
-                              <div className="grid gap-4 py-4">
-                                <div className="grid grid-cols-3 items-center gap-4">
-                                  <Label htmlFor="font-size-input" className="text-right">Size</Label>
+                            <DialogContent className="sm:max-w-[150px] p-2">
                                   <Input
                                     id="font-size-input"
                                     type="number"
                                     value={fontSizeInput}
                                     onChange={(e) => setFontSizeInput(e.target.value)}
-                                    className="col-span-2"
                                     min={12}
                                     max={120}
                                     onKeyDown={(e) => {
                                       if (e.key === 'Enter') {
-                                        handleSave(setFontSize, fontSizeInput, 12, 120, setIsFontSizeDialogOpen);
+                                        handleSave(setFontSize, fontSizeInput, 12, 120);
+                                        setIsFontSizeDialogOpen(false);
                                       }
                                     }}
                                   />
-                                </div>
-                              </div>
-                              <DialogFooter>
-                                <Button onClick={() => handleSave(setFontSize, fontSizeInput, 12, 120, setIsFontSizeDialogOpen)}>Save</Button>
-                              </DialogFooter>
                             </DialogContent>
                           </Dialog>
                           <Slider
@@ -495,7 +474,10 @@ export default function Home() {
                           />
                         </div>
                         <div className="flex flex-col items-center gap-3">
-                          <Dialog open={isHorizontalMarginDialogOpen} onOpenChange={setIsHorizontalMarginDialogOpen}>
+                          <Dialog open={isHorizontalMarginDialogOpen} onOpenChange={(isOpen) => {
+                                if (!isOpen) handleSave(setHorizontalMargin, horizontalMarginInput, 0, 40);
+                                setIsHorizontalMarginDialogOpen(isOpen);
+                            }}>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <DialogTrigger asChild>
@@ -504,32 +486,21 @@ export default function Home() {
                               </TooltipTrigger>
                               <TooltipContent><p>Horizontal Margin: {horizontalMargin}%</p></TooltipContent>
                             </Tooltip>
-                            <DialogContent className="sm:max-w-[280px]">
-                              <DialogHeader>
-                                <DialogTitle>Set Horizontal Margin</DialogTitle>
-                              </DialogHeader>
-                              <div className="grid gap-4 py-4">
-                                <div className="grid grid-cols-3 items-center gap-4">
-                                  <Label htmlFor="h-margin-input" className="text-right">Margin</Label>
+                            <DialogContent className="sm:max-w-[150px] p-2">
                                   <Input
                                     id="h-margin-input"
                                     type="number"
                                     value={horizontalMarginInput}
                                     onChange={(e) => setHorizontalMarginInput(e.target.value)}
-                                    className="col-span-2"
                                     min={0}
                                     max={40}
                                     onKeyDown={(e) => {
                                       if (e.key === 'Enter') {
-                                        handleSave(setHorizontalMargin, horizontalMarginInput, 0, 40, setIsHorizontalMarginDialogOpen);
+                                        handleSave(setHorizontalMargin, horizontalMarginInput, 0, 40);
+                                        setIsHorizontalMarginDialogOpen(false);
                                       }
                                     }}
                                   />
-                                </div>
-                              </div>
-                              <DialogFooter>
-                                <Button onClick={() => handleSave(setHorizontalMargin, horizontalMarginInput, 0, 40, setIsHorizontalMarginDialogOpen)}>Save</Button>
-                              </DialogFooter>
                             </DialogContent>
                           </Dialog>
                           <Slider
@@ -544,7 +515,10 @@ export default function Home() {
                           />
                         </div>
                         <div className="flex flex-col items-center gap-3">
-                          <Dialog open={isVerticalMarginDialogOpen} onOpenChange={setIsVerticalMarginDialogOpen}>
+                          <Dialog open={isVerticalMarginDialogOpen} onOpenChange={(isOpen) => {
+                                if (!isOpen) handleSave(setVerticalMargin, verticalMarginInput, 0, 40);
+                                setIsVerticalMarginDialogOpen(isOpen);
+                            }}>
                              <Tooltip>
                               <TooltipTrigger asChild>
                                 <DialogTrigger asChild>
@@ -553,32 +527,21 @@ export default function Home() {
                               </TooltipTrigger>
                               <TooltipContent><p>Vertical Margin: {verticalMargin}%</p></TooltipContent>
                             </Tooltip>
-                            <DialogContent className="sm:max-w-[280px]">
-                              <DialogHeader>
-                                <DialogTitle>Set Vertical Margin</DialogTitle>
-                              </DialogHeader>
-                              <div className="grid gap-4 py-4">
-                                <div className="grid grid-cols-3 items-center gap-4">
-                                  <Label htmlFor="v-margin-input" className="text-right">Margin</Label>
+                            <DialogContent className="sm:max-w-[150px] p-2">
                                   <Input
                                     id="v-margin-input"
                                     type="number"
                                     value={verticalMarginInput}
                                     onChange={(e) => setVerticalMarginInput(e.target.value)}
-                                    className="col-span-2"
                                     min={0}
                                     max={40}
                                     onKeyDown={(e) => {
                                       if (e.key === 'Enter') {
-                                        handleSave(setVerticalMargin, verticalMarginInput, 0, 40, setIsVerticalMarginDialogOpen);
+                                        handleSave(setVerticalMargin, verticalMarginInput, 0, 40);
+                                        setIsVerticalMarginDialogOpen(false);
                                       }
                                     }}
                                   />
-                                </div>
-                              </div>
-                              <DialogFooter>
-                                <Button onClick={() => handleSave(setVerticalMargin, verticalMarginInput, 0, 40, setIsVerticalMarginDialogOpen)}>Save</Button>
-                              </DialogFooter>
                             </DialogContent>
                           </Dialog>
                           <Slider
