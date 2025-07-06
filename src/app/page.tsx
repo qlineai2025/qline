@@ -289,14 +289,14 @@ export default function Home() {
   return (
     <main
       className={cn(
-        "flex flex-col h-screen bg-background transition-all duration-300",
-        isMaximized ? "p-0" : "p-4"
+        "flex h-screen flex-col bg-background transition-all duration-300",
+        isMaximized ? "p-0" : "p-4 gap-4"
       )}
     >
       <div
         className={cn(
-          "flex-1 grid gap-4 max-w-screen-2xl mx-auto w-full min-h-0",
-          isMaximized ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-[250px_1fr]"
+          "grid flex-1 gap-4 max-w-screen-2xl mx-auto w-full min-h-0",
+          isMaximized ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-[200px_1fr]"
         )}
       >
         <div className={cn("lg:col-span-1", isMaximized ? "hidden" : "block")}>
@@ -308,9 +308,9 @@ export default function Home() {
                   Controls
                 </CardTitle>
               </CardHeader>
-              <CardContent className="flex flex-col gap-6">
+              <CardContent className="flex flex-col items-center gap-6">
                  <TooltipProvider>
-                    <div className="flex items-center justify-center gap-2">
+                    <div className="flex items-center justify-center gap-2 w-full">
                       {loading ? (
                         <Skeleton className="h-10 w-full" />
                       ) : user ? (
@@ -340,7 +340,7 @@ export default function Home() {
                       </Button>
                     </div>
 
-                    <div className="flex items-center justify-around pt-4 border-t">
+                    <div className="flex items-center justify-around pt-4 border-t w-full">
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button variant="ghost" size="icon" onClick={() => setIsVoiceControlOn(!isVoiceControlOn)}>
@@ -376,7 +376,7 @@ export default function Home() {
                     </div>
                      {isProcessingAudio && <p className="text-sm text-muted-foreground text-center">Adjusting speed...</p>}
 
-                    <div className="space-y-4 pt-4 border-t">
+                    <div className="space-y-4 pt-4 border-t w-full">
                         <div className="flex items-center gap-3">
                             <Tooltip>
                                 <TooltipTrigger asChild>
@@ -447,7 +447,7 @@ export default function Home() {
                     {user && (
                       <>
                         <Separator/>
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between w-full">
                             <div className="flex items-center gap-3">
                                 <Avatar className="h-9 w-9">
                                     <AvatarImage src={user.photoURL || ''} alt={user.displayName || ''}/>
@@ -477,7 +477,7 @@ export default function Home() {
 
         <div
           className={cn(
-            "flex flex-col gap-4 h-full",
+            "flex flex-col min-h-0",
             isMaximized ? "col-span-1" : ""
           )}
         >
@@ -532,7 +532,7 @@ export default function Home() {
           </div>
         </div>
       </div>
-       <div className={cn("max-w-screen-2xl mx-auto w-full pt-4", isMaximized ? "hidden" : "block")}>
+       <div className={cn("max-w-screen-2xl mx-auto w-full", isMaximized ? "hidden" : "block")}>
         <Textarea
           placeholder="Paste your script here..."
           value={text}
@@ -543,5 +543,3 @@ export default function Home() {
     </main>
   );
 }
-
-  
