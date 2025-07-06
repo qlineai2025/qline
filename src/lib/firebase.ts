@@ -23,6 +23,7 @@ if (firebaseConfig.apiKey) {
     // Request access to read Google Docs and list Google Drive files.
     googleProvider.addScope("https://www.googleapis.com/auth/documents.readonly");
     googleProvider.addScope("https://www.googleapis.com/auth/drive.readonly");
+    googleProvider.addScope("https://www.googleapis.com/auth/presentations.readonly");
   } catch (error) {
     console.error("Firebase initialization error:", error);
     // If initialization fails, ensure auth-related objects are null.

@@ -13,6 +13,9 @@ interface PresenterSettings {
   isFlippedHorizontally: boolean;
   isFlippedVertically: boolean;
   scrollSpeed: number;
+  prompterMode: 'text' | 'slides';
+  slides: string[];
+  currentSlideIndex: number;
 }
 
 const DEFAULT_SETTINGS: PresenterSettings = {
@@ -24,6 +27,9 @@ const DEFAULT_SETTINGS: PresenterSettings = {
   isFlippedHorizontally: false,
   isFlippedVertically: false,
   scrollSpeed: 30,
+  prompterMode: 'text',
+  slides: [],
+  currentSlideIndex: 0,
 };
 
 function processedTextForPresenter(text: string) {
@@ -84,6 +90,9 @@ export default function PresenterPage() {
           const targetWord = document.getElementById(`presenter-word-${payload.wordIndex}`);
           targetWord?.scrollIntoView({ behavior: 'smooth', block: 'center' });
           break;
+        case 'slide_change':
+          setSettings(s => ({ ...s, currentSlideIndex: payload.newIndex }));
+          break;
       }
     };
 
@@ -125,50 +134,67 @@ export default function PresenterPage() {
   }, []);
 
   useEffect(() => {
-    if (isPlaying) {
+    if (isPlaying && settings.prompterMode === 'text') {
       startScroll();
     } else {
       stopScroll();
     }
     return stopScroll;
-  }, [isPlaying, startScroll, stopScroll]);
+  }, [isPlaying, startScroll, stopScroll, settings.prompterMode]);
 
   return (
     <main className="h-screen w-screen bg-black overflow-hidden">
-        <div
-            ref={displayRef}
-            className={cn(
-            "h-full overflow-y-auto",
-            settings.isHighContrast && "bg-black",
-            settings.isFlippedHorizontally && "scale-x-[-1]",
-            settings.isFlippedVertically && "scale-y-[-1]"
-            )}
-            style={{
-            paddingLeft: `${settings.horizontalMargin}%`,
-            paddingRight: `${settings.horizontalMargin}%`,
-            }}
-        >
+        {settings.prompterMode === 'text' ? (
             <div
-            className="w-full min-h-full flex justify-center items-center m-auto"
-                style={{
-                paddingTop: `${settings.verticalMargin}%`,
-                paddingBottom: `${settings.verticalMargin}%`,
-            }}
-            >
-            <div
+                ref={displayRef}
                 className={cn(
-                "whitespace-pre-wrap break-words m-auto",
-                settings.isHighContrast ? "text-white" : "text-foreground"
+                "h-full overflow-y-auto",
+                settings.isHighContrast && "bg-black",
+                settings.isFlippedHorizontally && "scale-x-[-1]",
+                settings.isFlippedVertically && "scale-y-[-1]"
                 )}
                 style={{
-                fontSize: `${settings.fontSize}px`,
-                lineHeight: 1.5,
+                paddingLeft: `${settings.horizontalMargin}%`,
+                paddingRight: `${settings.horizontalMargin}%`,
                 }}
             >
-                {processedTextForPresenter(settings.text)}
+                <div
+                className="w-full min-h-full flex justify-center items-center m-auto"
+                    style={{
+                    paddingTop: `${settings.verticalMargin}%`,
+                    paddingBottom: `${settings.verticalMargin}%`,
+                }}
+                >
+                <div
+                    className={cn(
+                    "whitespace-pre-wrap break-words m-auto",
+                    settings.isHighContrast ? "text-white" : "text-foreground"
+                    )}
+                    style={{
+                    fontSize: `${settings.fontSize}px`,
+                    lineHeight: 1.5,
+                    }}
+                >
+                    {processedTextForPresenter(settings.text)}
+                </div>
+                </div>
             </div>
+        ) : settings.slides.length > 0 ? (
+            <div
+                className={cn(
+                "h-full w-full flex items-center justify-center",
+                settings.isHighContrast && "bg-black",
+                settings.isFlippedHorizontally && "scale-x-[-1]",
+                settings.isFlippedVertically && "scale-y-[-1]"
+                )}
+            >
+                <img
+                    src={settings.slides[settings.currentSlideIndex]}
+                    alt={`Slide ${settings.currentSlideIndex + 1}`}
+                    className="max-w-full max-h-full object-contain"
+                />
             </div>
-        </div>
+        ) : null}
     </main>
   );
 }

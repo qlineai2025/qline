@@ -1,12 +1,17 @@
 'use server';
 /**
- * @fileOverview Flows for interacting with Google Drive and Google Docs APIs.
+ * @fileOverview Flows for interacting with Google Drive, Google Docs, and Google Slides APIs.
  *
  * - listGoogleDocs - Fetches a list of Google Docs from the user's Drive.
  * - getGoogleDocContent - Fetches and parses the text content of a specific Google Doc.
+ * - listGoogleSlides - Fetches a list of Google Slides from the user's Drive.
+ * - getGoogleSlideImageUrls - Fetches the image URLs for all slides in a presentation.
  * - GoogleDoc - The type for a single Google Doc file.
  * - ListGoogleDocsInput - The input type for the listGoogleDocs function.
  * - GetGoogleDocContentInput - The input type for the getGoogleDocContent function.
+ * - GoogleSlide - The type for a single Google Slide file.
+ * - ListGoogleSlidesInput - The input type for the listGoogleSlides function.
+ * - GetGoogleSlideContentInput - The input type for the getGoogleSlideImageUrls function.
  */
 
 import { ai } from '@/ai/genkit';
@@ -34,6 +39,27 @@ const GetGoogleDocContentInputSchema = z.object({
 export type GetGoogleDocContentInput = z.infer<
   typeof GetGoogleDocContentInputSchema
 >;
+
+// Schema for a single Google Slide file
+const GoogleSlideSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+});
+export type GoogleSlide = z.infer<typeof GoogleSlideSchema>;
+
+// Input schema for listing Google Slides
+const ListGoogleSlidesInputSchema = z.object({
+  accessToken: z.string().describe('The OAuth2 access token for the user.'),
+});
+export type ListGoogleSlidesInput = z.infer<typeof ListGoogleSlidesInputSchema>;
+
+// Input schema for getting Google Slide content
+const GetGoogleSlideContentInputSchema = z.object({
+  accessToken: z.string().describe('The OAuth2 access token for the user.'),
+  presentationId: z.string().describe('The ID of the Google Slides presentation to fetch.'),
+});
+export type GetGoogleSlideContentInput = z.infer<typeof GetGoogleSlideContentInputSchema>;
+
 
 /**
  * Sets up an authenticated OAuth2 client.
@@ -126,6 +152,85 @@ export const getGoogleDocContent = ai.defineFlow(
     } catch (error) {
       console.error('Error fetching Google Doc content:', error);
       throw new Error('Failed to fetch Google Doc content.');
+    }
+  }
+);
+
+/**
+ * Fetches a list of Google Slides from the user's Google Drive.
+ */
+export const listGoogleSlides = ai.defineFlow(
+  {
+    name: 'listGoogleSlidesFlow',
+    inputSchema: ListGoogleSlidesInputSchema,
+    outputSchema: z.array(GoogleSlideSchema),
+  },
+  async (input) => {
+    try {
+      const auth = getAuthenticatedClient(input.accessToken);
+      const drive = google.drive({ version: 'v3', auth });
+      
+      const response = await drive.files.list({
+        pageSize: 50,
+        fields: 'files(id, name)',
+        q: "mimeType='application/vnd.google-apps.presentation'",
+        orderBy: 'modifiedTime desc',
+      });
+
+      const files = response.data.files;
+      if (!files) {
+        return [];
+      }
+      return files.map((file) => ({
+        id: file.id!,
+        name: file.name!,
+      }));
+    } catch (error) {
+      console.error('Error fetching Google Slides list:', error);
+      throw new Error('Failed to fetch Google Slides. The access token might be expired or invalid.');
+    }
+  }
+);
+
+
+/**
+ * Fetches the image URLs of all slides in a presentation.
+ */
+export const getGoogleSlideImageUrls = ai.defineFlow(
+  {
+    name: 'getGoogleSlideImageUrlsFlow',
+    inputSchema: GetGoogleSlideContentInputSchema,
+    outputSchema: z.array(z.string()),
+  },
+  async (input) => {
+    try {
+      const auth = getAuthenticatedClient(input.accessToken);
+      const slidesApi = google.slides({ version: 'v1', auth });
+
+      const presentation = await slidesApi.presentations.get({
+        presentationId: input.presentationId,
+      });
+
+      const pageIds = presentation.data.slides?.map(slide => slide.objectId!) ?? [];
+      if (!pageIds.length) {
+        return [];
+      }
+
+      const imageUrls = await Promise.all(
+        pageIds.map(async (pageId) => {
+          const thumbnail = await slidesApi.presentations.pages.getThumbnail({
+            presentationId: input.presentationId,
+            pageObjectId: pageId,
+            'thumbnailProperties.thumbnailSize': 'LARGE'
+          });
+          return thumbnail.data.contentUrl!;
+        })
+      );
+      
+      return imageUrls.filter(url => !!url);
+    } catch (error) {
+      console.error('Error fetching Google Slides content:', error);
+      throw new Error('Failed to fetch Google Slides content.');
     }
   }
 );
