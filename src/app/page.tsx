@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback, ChangeEvent } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { adjustScrollSpeed } from "@/ai/flows/adjust-scroll-speed";
 import { cn } from "@/lib/utils";
 
@@ -12,7 +12,6 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Upload,
   Play,
   Pause,
   Mic,
@@ -57,32 +56,12 @@ export default function Home() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file && file.type === "text/plain") {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const fileText = e.target?.result as string;
-        setText(fileText);
-        toast({
-          title: "File imported",
-          description: `${file.name} has been loaded into the teleprompter.`,
-        });
-      };
-      reader.readAsText(file);
-    } else {
-      toast({
-        variant: "destructive",
-        title: "Invalid file type",
-        description: "Please select a .txt file.",
-      });
-    }
-  };
-  
-  const triggerFileUpload = () => {
-    fileInputRef.current?.click();
+  const handleGoogleImport = () => {
+    toast({
+      title: "Coming Soon!",
+      description: "Import from Google is not yet implemented.",
+    });
   };
 
   const blobToDataUri = (blob: Blob): Promise<string> => {
@@ -275,11 +254,11 @@ export default function Home() {
             </CardHeader>
             <CardContent className="flex flex-col gap-6">
               <div className="flex items-center justify-center gap-4">
-                <Button onClick={triggerFileUpload} variant="outline" className="w-full">
-                  <Upload className="mr-2 h-4 w-4" /> Import .txt
+                <Button onClick={handleGoogleImport} variant="outline" className="w-full">
+                   <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4" fill="currentColor"><title>Google</title><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.1-1.02 1.08-2.58 2.03-4.56 2.03-3.86 0-7-3.14-7-7s3.14-7 7-7c2.29 0 3.63.86 4.5 1.75l2.4-2.4C18.49 3.46 15.9 2 12.48 2c-5.45 0-9.94 4.45-9.94 9.9s4.49 9.9 9.94 9.9c3.31 0 5.21-1.1 6.84-2.73 1.69-1.69 2.23-4.03 2.23-6.14s-.04-1.2-.1-1.73h-9.04z"/></svg>
+                  Import from Google
                 </Button>
-                <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".txt" className="hidden" />
-
+                
                 <Button onClick={() => setIsPlaying(!isPlaying)} className="w-full">
                   {isPlaying ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
                   {isPlaying ? "Pause" : "Play"}
