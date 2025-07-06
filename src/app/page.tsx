@@ -489,14 +489,12 @@ export default function Home() {
               <div
                 ref={displayRef}
                 className={cn(
-                  "h-full overflow-y-scroll scroll-smooth p-4",
+                  "h-full overflow-y-auto scroll-smooth flex justify-center",
                   isHighContrast && "bg-black",
                   isFlippedHorizontally && "scale-x-[-1]",
                   isFlippedVertically && "scale-y-[-1]"
                 )}
                 style={{
-                  paddingLeft: `${horizontalMargin}%`,
-                  paddingRight: `${horizontalMargin}%`,
                   paddingTop: `${verticalMargin}%`,
                   paddingBottom: `${verticalMargin}%`,
                 }}
@@ -509,6 +507,7 @@ export default function Home() {
                   style={{
                     fontSize: `${fontSize}px`,
                     lineHeight: 1.5,
+                    width: `${100 - horizontalMargin * 2}%`,
                   }}
                 >
                   {text}
@@ -521,5 +520,3 @@ export default function Home() {
     </main>
   );
 }
-
-    
