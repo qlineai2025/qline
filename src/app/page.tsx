@@ -333,7 +333,9 @@ export default function Home() {
     if (!isPlaying) {
       setIsMaximized(true);
       if (displayRef.current) {
-        displayRef.current.scrollTop = 0;
+        if (displayRef.current.scrollTop + displayRef.current.clientHeight >= displayRef.current.scrollHeight -1) {
+          displayRef.current.scrollTop = 0;
+        }
       }
     }
     setIsPlaying(!isPlaying);
@@ -609,7 +611,7 @@ export default function Home() {
                 <div
                   ref={displayRef}
                   className={cn(
-                    "h-full overflow-y-auto scroll-smooth",
+                    "h-full overflow-y-auto",
                     isHighContrast && "bg-black",
                     isFlippedHorizontally && "scale-x-[-1]",
                     isFlippedVertically && "scale-y-[-1]"
@@ -620,7 +622,7 @@ export default function Home() {
                   }}
                 >
                   <div
-                    className="w-full min-h-full flex justify-center items-center"
+                    className="w-full min-h-full flex justify-center items-center m-auto"
                      style={{
                       paddingTop: `${verticalMargin}%`,
                       paddingBottom: `${verticalMargin}%`,
