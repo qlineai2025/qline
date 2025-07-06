@@ -27,10 +27,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import {
   Play,
@@ -81,16 +81,16 @@ export default function Home() {
   const [isFlippedHorizontally, setIsFlippedHorizontally] = useState<boolean>(false);
   const [isFlippedVertically, setIsFlippedVertically] = useState<boolean>(false);
 
-  const [isSpeedDialogOpen, setIsSpeedDialogOpen] = useState(false);
+  const [isSpeedPopoverOpen, setIsSpeedPopoverOpen] = useState(false);
   const [speedInput, setSpeedInput] = useState(String(scrollSpeed));
 
-  const [isFontSizeDialogOpen, setIsFontSizeDialogOpen] = useState(false);
+  const [isFontSizePopoverOpen, setIsFontSizePopoverOpen] = useState(false);
   const [fontSizeInput, setFontSizeInput] = useState(String(fontSize));
 
-  const [isHorizontalMarginDialogOpen, setIsHorizontalMarginDialogOpen] = useState(false);
+  const [isHorizontalMarginPopoverOpen, setIsHorizontalMarginPopoverOpen] = useState(false);
   const [horizontalMarginInput, setHorizontalMarginInput] = useState(String(horizontalMargin));
   
-  const [isVerticalMarginDialogOpen, setIsVerticalMarginDialogOpen] = useState(false);
+  const [isVerticalMarginPopoverOpen, setIsVerticalMarginPopoverOpen] = useState(false);
   const [verticalMarginInput, setVerticalMarginInput] = useState(String(verticalMargin));
 
 
@@ -248,7 +248,7 @@ export default function Home() {
   }, []);
 
   const scroll = useCallback(() => {
-    if (!displayRef.current) return;
+    if (!displayRef.current || !isPlaying) return;
 
     const currentDisplay = displayRef.current;
     const pixelsPerSecond = scrollSpeed;
@@ -259,7 +259,7 @@ export default function Home() {
     if (currentDisplay.scrollTop + currentDisplay.clientHeight >= currentDisplay.scrollHeight) {
       setIsPlaying(false);
     }
-  }, [scrollSpeed]);
+  }, [scrollSpeed, isPlaying]);
 
   useEffect(() => {
     let animationFrameId: number | null = null;
@@ -389,37 +389,37 @@ export default function Home() {
                     </div>
                      {isProcessingAudio && <p className="text-sm text-muted-foreground text-center">Adjusting speed...</p>}
 
-                    <div className="flex items-start justify-around gap-4 pt-2 border-t w-full">
+                    <div className="flex items-start justify-between pt-2 border-t w-full">
                         <div className="flex flex-col items-center gap-3">
-                          <Dialog open={isSpeedDialogOpen} onOpenChange={(isOpen) => {
+                          <Popover open={isSpeedPopoverOpen} onOpenChange={(isOpen) => {
                                 if (!isOpen) handleSave(setScrollSpeed, speedInput, 0, 100);
-                                setIsSpeedDialogOpen(isOpen);
+                                setIsSpeedPopoverOpen(isOpen);
                             }}>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <DialogTrigger asChild>
-                                  <Button variant="ghost" size="icon"><Gauge/></Button>
-                                </DialogTrigger>
-                              </TooltipTrigger>
-                              <TooltipContent><p>Scroll Speed: {scrollSpeed.toFixed(0)}</p></TooltipContent>
-                            </Tooltip>
-                            <DialogContent className="sm:max-w-[150px] p-2">
-                                  <Input
-                                    id="speed-input"
-                                    type="number"
-                                    value={speedInput}
-                                    onChange={(e) => setSpeedInput(e.target.value)}
-                                    min={0}
-                                    max={100}
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') {
-                                        handleSave(setScrollSpeed, speedInput, 0, 100);
-                                        setIsSpeedDialogOpen(false);
-                                      }
-                                    }}
-                                  />
-                            </DialogContent>
-                          </Dialog>
+                               <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <PopoverTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="w-7 h-7 p-0"><Gauge className="h-4 w-4"/></Button>
+                                  </PopoverTrigger>
+                                </TooltipTrigger>
+                                <TooltipContent><p>Scroll Speed: {scrollSpeed.toFixed(0)}</p></TooltipContent>
+                               </Tooltip>
+                               <PopoverContent className="w-[150px] p-2">
+                                    <Input
+                                      id="speed-input"
+                                      type="number"
+                                      value={speedInput}
+                                      onChange={(e) => setSpeedInput(e.target.value)}
+                                      min={0}
+                                      max={100}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          handleSave(setScrollSpeed, speedInput, 0, 100);
+                                          setIsSpeedPopoverOpen(false);
+                                        }
+                                      }}
+                                    />
+                               </PopoverContent>
+                          </Popover>
                           <Slider
                             id="speed"
                             orientation="vertical"
@@ -433,35 +433,35 @@ export default function Home() {
                           />
                         </div>
                         <div className="flex flex-col items-center gap-3">
-                           <Dialog open={isFontSizeDialogOpen} onOpenChange={(isOpen) => {
+                           <Popover open={isFontSizePopoverOpen} onOpenChange={(isOpen) => {
                                 if (!isOpen) handleSave(setFontSize, fontSizeInput, 12, 120);
-                                setIsFontSizeDialogOpen(isOpen);
+                                setIsFontSizePopoverOpen(isOpen);
                             }}>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <DialogTrigger asChild>
-                                  <Button variant="ghost" size="icon"><TextIcon/></Button>
-                                </DialogTrigger>
-                              </TooltipTrigger>
-                              <TooltipContent><p>Font Size: {fontSize}px</p></TooltipContent>
-                            </Tooltip>
-                            <DialogContent className="sm:max-w-[150px] p-2">
-                                  <Input
-                                    id="font-size-input"
-                                    type="number"
-                                    value={fontSizeInput}
-                                    onChange={(e) => setFontSizeInput(e.target.value)}
-                                    min={12}
-                                    max={120}
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') {
-                                        handleSave(setFontSize, fontSizeInput, 12, 120);
-                                        setIsFontSizeDialogOpen(false);
-                                      }
-                                    }}
-                                  />
-                            </DialogContent>
-                          </Dialog>
+                                <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <PopoverTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="w-7 h-7 p-0"><TextIcon className="h-4 w-4"/></Button>
+                                  </PopoverTrigger>
+                                </TooltipTrigger>
+                                <TooltipContent><p>Font Size: {fontSize}px</p></TooltipContent>
+                               </Tooltip>
+                               <PopoverContent className="w-[150px] p-2">
+                                    <Input
+                                      id="font-size-input"
+                                      type="number"
+                                      value={fontSizeInput}
+                                      onChange={(e) => setFontSizeInput(e.target.value)}
+                                      min={12}
+                                      max={120}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          handleSave(setFontSize, fontSizeInput, 12, 120);
+                                          setIsFontSizePopoverOpen(false);
+                                        }
+                                      }}
+                                    />
+                               </PopoverContent>
+                          </Popover>
                           <Slider
                             id="font-size"
                             orientation="vertical"
@@ -474,35 +474,35 @@ export default function Home() {
                           />
                         </div>
                         <div className="flex flex-col items-center gap-3">
-                          <Dialog open={isHorizontalMarginDialogOpen} onOpenChange={(isOpen) => {
+                          <Popover open={isHorizontalMarginPopoverOpen} onOpenChange={(isOpen) => {
                                 if (!isOpen) handleSave(setHorizontalMargin, horizontalMarginInput, 0, 40);
-                                setIsHorizontalMarginDialogOpen(isOpen);
+                                setIsHorizontalMarginPopoverOpen(isOpen);
                             }}>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <DialogTrigger asChild>
-                                  <Button variant="ghost" size="icon"><StretchHorizontal/></Button>
-                                </DialogTrigger>
-                              </TooltipTrigger>
-                              <TooltipContent><p>Horizontal Margin: {horizontalMargin}%</p></TooltipContent>
-                            </Tooltip>
-                            <DialogContent className="sm:max-w-[150px] p-2">
-                                  <Input
-                                    id="h-margin-input"
-                                    type="number"
-                                    value={horizontalMarginInput}
-                                    onChange={(e) => setHorizontalMarginInput(e.target.value)}
-                                    min={0}
-                                    max={40}
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') {
-                                        handleSave(setHorizontalMargin, horizontalMarginInput, 0, 40);
-                                        setIsHorizontalMarginDialogOpen(false);
-                                      }
-                                    }}
-                                  />
-                            </DialogContent>
-                          </Dialog>
+                               <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <PopoverTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="w-7 h-7 p-0"><StretchHorizontal className="h-4 w-4"/></Button>
+                                  </PopoverTrigger>
+                                </TooltipTrigger>
+                                <TooltipContent><p>Horizontal Margin: {horizontalMargin}%</p></TooltipContent>
+                               </Tooltip>
+                               <PopoverContent className="w-[150px] p-2">
+                                    <Input
+                                      id="h-margin-input"
+                                      type="number"
+                                      value={horizontalMarginInput}
+                                      onChange={(e) => setHorizontalMarginInput(e.target.value)}
+                                      min={0}
+                                      max={40}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          handleSave(setHorizontalMargin, horizontalMarginInput, 0, 40);
+                                          setIsHorizontalMarginPopoverOpen(false);
+                                        }
+                                      }}
+                                    />
+                               </PopoverContent>
+                          </Popover>
                           <Slider
                             id="horizontal-margin"
                             orientation="vertical"
@@ -515,35 +515,35 @@ export default function Home() {
                           />
                         </div>
                         <div className="flex flex-col items-center gap-3">
-                          <Dialog open={isVerticalMarginDialogOpen} onOpenChange={(isOpen) => {
+                          <Popover open={isVerticalMarginPopoverOpen} onOpenChange={(isOpen) => {
                                 if (!isOpen) handleSave(setVerticalMargin, verticalMarginInput, 0, 40);
-                                setIsVerticalMarginDialogOpen(isOpen);
+                                setIsVerticalMarginPopoverOpen(isOpen);
                             }}>
-                             <Tooltip>
-                              <TooltipTrigger asChild>
-                                <DialogTrigger asChild>
-                                  <Button variant="ghost" size="icon"><StretchVertical/></Button>
-                                </DialogTrigger>
-                              </TooltipTrigger>
-                              <TooltipContent><p>Vertical Margin: {verticalMargin}%</p></TooltipContent>
-                            </Tooltip>
-                            <DialogContent className="sm:max-w-[150px] p-2">
-                                  <Input
-                                    id="v-margin-input"
-                                    type="number"
-                                    value={verticalMarginInput}
-                                    onChange={(e) => setVerticalMarginInput(e.target.value)}
-                                    min={0}
-                                    max={40}
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') {
-                                        handleSave(setVerticalMargin, verticalMarginInput, 0, 40);
-                                        setIsVerticalMarginDialogOpen(false);
-                                      }
-                                    }}
-                                  />
-                            </DialogContent>
-                          </Dialog>
+                               <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <PopoverTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="w-7 h-7 p-0"><StretchVertical className="h-4 w-4"/></Button>
+                                  </PopoverTrigger>
+                                </TooltipTrigger>
+                                <TooltipContent><p>Vertical Margin: {verticalMargin}%</p></TooltipContent>
+                               </Tooltip>
+                               <PopoverContent className="w-[150px] p-2">
+                                    <Input
+                                      id="v-margin-input"
+                                      type="number"
+                                      value={verticalMarginInput}
+                                      onChange={(e) => setVerticalMarginInput(e.target.value)}
+                                      min={0}
+                                      max={40}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          handleSave(setVerticalMargin, verticalMarginInput, 0, 40);
+                                          setIsVerticalMarginPopoverOpen(false);
+                                        }
+                                      }}
+                                    />
+                               </PopoverContent>
+                          </Popover>
                           <Slider
                             id="vertical-margin"
                             orientation="vertical"
@@ -654,4 +654,5 @@ export default function Home() {
       </div>
     </main>
   );
-}
+
+    
