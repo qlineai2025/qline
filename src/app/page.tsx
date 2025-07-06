@@ -10,7 +10,7 @@ import { auth, googleProvider } from "@/lib/firebase";
 import { signInWithPopup, signOut } from "firebase/auth";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
@@ -99,7 +99,6 @@ export default function Home() {
 
 
   const displayRef = useRef<HTMLDivElement>(null);
-  const scrollRequestRef = useRef<number | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -254,32 +253,34 @@ export default function Home() {
   }, []);
 
   const scroll = useCallback(() => {
-    if (!displayRef.current || !isPlaying) return;
+    if (!displayRef.current) return;
 
     const currentDisplay = displayRef.current;
     const pixelsPerSecond = scrollSpeed;
-    const scrollAmount = pixelsPerSecond / 60.0; // Assuming 60fps from requestAnimationFrame
+    const scrollAmount = pixelsPerSecond / 60.0;
 
     currentDisplay.scrollTop += scrollAmount;
 
     if (currentDisplay.scrollTop + currentDisplay.clientHeight >= currentDisplay.scrollHeight) {
       setIsPlaying(false);
     }
-  }, [isPlaying, scrollSpeed]);
+  }, [scrollSpeed]);
 
   useEffect(() => {
+    let animationFrameId: number | null = null;
+    
     const animate = () => {
       scroll();
-      scrollRequestRef.current = requestAnimationFrame(animate);
+      animationFrameId = requestAnimationFrame(animate);
     };
 
     if (isPlaying) {
-      scrollRequestRef.current = requestAnimationFrame(animate);
+      animationFrameId = requestAnimationFrame(animate);
     }
 
     return () => {
-      if (scrollRequestRef.current) {
-        cancelAnimationFrame(scrollRequestRef.current);
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
       }
     };
   }, [isPlaying, scroll]);
@@ -321,30 +322,13 @@ export default function Home() {
   };
 
   return (
-    <main
-      className={cn(
-        "flex h-screen flex-col bg-background transition-all duration-300",
-        isMaximized ? "p-0" : "p-4 gap-4"
-      )}
-    >
-      <div
-        className={cn(
-          "grid flex-1 gap-4 max-w-screen-2xl mx-auto w-full min-h-0",
-          isMaximized ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-[200px_1fr]"
-        )}
-      >
-        <div className={cn("lg:col-span-1", isMaximized ? "hidden" : "block")}>
-          <div className="h-full overflow-y-auto pr-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="text-primary"/>
-                  Controls
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col items-center gap-6">
+    <main className="flex h-screen flex-col bg-background">
+      <div className="grid flex-1 grid-cols-[auto_1fr] gap-4 p-4 min-h-0">
+        <div className="h-full overflow-y-auto pr-2">
+            <Card className="w-[140px]">
+              <CardContent className="flex flex-col items-center gap-4 p-2">
                  <TooltipProvider>
-                    <div className="flex items-center justify-center gap-2 w-full">
+                    <div className="flex flex-col items-center justify-center gap-2 w-full">
                       {loading ? (
                         <Skeleton className="h-10 w-full" />
                       ) : user ? (
@@ -374,7 +358,7 @@ export default function Home() {
                       </Button>
                     </div>
 
-                    <div className="flex items-center justify-around pt-4 border-t w-full">
+                    <div className="flex items-center justify-around pt-2 border-t w-full">
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button variant="ghost" size="icon" onClick={() => setIsVoiceControlOn(!isVoiceControlOn)}>
@@ -410,17 +394,17 @@ export default function Home() {
                     </div>
                      {isProcessingAudio && <p className="text-sm text-muted-foreground text-center">Adjusting speed...</p>}
 
-                    <div className="space-y-4 pt-4 border-t w-full">
-                        <div className="flex items-center gap-3">
+                    <div className="flex items-start justify-around gap-4 pt-2 border-t w-full">
+                        <div className="flex flex-col items-center gap-3">
                           <Dialog open={isSpeedDialogOpen} onOpenChange={setIsSpeedDialogOpen}>
-                            <DialogTrigger asChild>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="cursor-pointer"><Gauge/></Button>
-                                </TooltipTrigger>
-                                <TooltipContent><p>Scroll Speed: {scrollSpeed.toFixed(0)}</p></TooltipContent>
-                              </Tooltip>
-                            </DialogTrigger>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <DialogTrigger asChild>
+                                  <Button variant="ghost" size="icon"><Gauge/></Button>
+                                </DialogTrigger>
+                              </TooltipTrigger>
+                              <TooltipContent><p>Scroll Speed: {scrollSpeed.toFixed(0)}</p></TooltipContent>
+                            </Tooltip>
                             <DialogContent className="sm:max-w-[280px]">
                               <DialogHeader>
                                 <DialogTitle>Set Scroll Speed</DialogTitle>
@@ -451,24 +435,26 @@ export default function Home() {
                           </Dialog>
                           <Slider
                             id="speed"
+                            orientation="vertical"
                             min={0}
                             max={100}
                             step={1}
                             value={[scrollSpeed]}
                             onValueChange={(value) => setScrollSpeed(value[0])}
                             disabled={isVoiceControlOn}
+                            className="h-24"
                           />
                         </div>
-                        <div className="flex items-center gap-3">
-                          <Dialog open={isFontSizeDialogOpen} onOpenChange={setIsFontSizeDialogOpen}>
-                            <DialogTrigger asChild>
-                              <Tooltip>
-                                  <TooltipTrigger asChild>
-                                      <Button variant="ghost" size="icon" className="cursor-pointer"><TextIcon/></Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent><p>Font Size: {fontSize}px</p></TooltipContent>
-                              </Tooltip>
-                            </DialogTrigger>
+                        <div className="flex flex-col items-center gap-3">
+                           <Dialog open={isFontSizeDialogOpen} onOpenChange={setIsFontSizeDialogOpen}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <DialogTrigger asChild>
+                                  <Button variant="ghost" size="icon"><TextIcon/></Button>
+                                </DialogTrigger>
+                              </TooltipTrigger>
+                              <TooltipContent><p>Font Size: {fontSize}px</p></TooltipContent>
+                            </Tooltip>
                             <DialogContent className="sm:max-w-[280px]">
                               <DialogHeader>
                                 <DialogTitle>Set Font Size</DialogTitle>
@@ -499,23 +485,25 @@ export default function Home() {
                           </Dialog>
                           <Slider
                             id="font-size"
+                            orientation="vertical"
                             min={12}
                             max={120}
                             step={1}
                             value={[fontSize]}
                             onValueChange={(value) => setFontSize(value[0])}
+                            className="h-24"
                           />
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-col items-center gap-3">
                           <Dialog open={isHorizontalMarginDialogOpen} onOpenChange={setIsHorizontalMarginDialogOpen}>
-                            <DialogTrigger asChild>
-                              <Tooltip>
-                                  <TooltipTrigger asChild>
-                                      <Button variant="ghost" size="icon" className="cursor-pointer"><StretchHorizontal/></Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent><p>Horizontal Margin: {horizontalMargin}%</p></TooltipContent>
-                              </Tooltip>
-                            </DialogTrigger>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <DialogTrigger asChild>
+                                  <Button variant="ghost" size="icon"><StretchHorizontal/></Button>
+                                </DialogTrigger>
+                              </TooltipTrigger>
+                              <TooltipContent><p>Horizontal Margin: {horizontalMargin}%</p></TooltipContent>
+                            </Tooltip>
                             <DialogContent className="sm:max-w-[280px]">
                               <DialogHeader>
                                 <DialogTitle>Set Horizontal Margin</DialogTitle>
@@ -546,23 +534,25 @@ export default function Home() {
                           </Dialog>
                           <Slider
                             id="horizontal-margin"
+                            orientation="vertical"
                             min={0}
                             max={40}
                             step={1}
                             value={[horizontalMargin]}
                             onValueChange={(value) => setHorizontalMargin(value[0])}
+                            className="h-24"
                           />
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-col items-center gap-3">
                           <Dialog open={isVerticalMarginDialogOpen} onOpenChange={setIsVerticalMarginDialogOpen}>
-                            <DialogTrigger asChild>
-                              <Tooltip>
-                                  <TooltipTrigger asChild>
-                                      <Button variant="ghost" size="icon" className="cursor-pointer"><StretchVertical/></Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent><p>Vertical Margin: {verticalMargin}%</p></TooltipContent>
-                              </Tooltip>
-                            </DialogTrigger>
+                             <Tooltip>
+                              <TooltipTrigger asChild>
+                                <DialogTrigger asChild>
+                                  <Button variant="ghost" size="icon"><StretchVertical/></Button>
+                                </DialogTrigger>
+                              </TooltipTrigger>
+                              <TooltipContent><p>Vertical Margin: {verticalMargin}%</p></TooltipContent>
+                            </Tooltip>
                             <DialogContent className="sm:max-w-[280px]">
                               <DialogHeader>
                                 <DialogTitle>Set Vertical Margin</DialogTitle>
@@ -593,11 +583,13 @@ export default function Home() {
                           </Dialog>
                           <Slider
                             id="vertical-margin"
+                            orientation="vertical"
                             min={0}
                             max={40}
                             step={1}
                             value={[verticalMargin]}
                             onValueChange={(value) => setVerticalMargin(value[0])}
+                            className="h-24"
                           />
                         </div>
                     </div>
@@ -631,19 +623,18 @@ export default function Home() {
               </CardContent>
             </Card>
           </div>
-        </div>
 
         <div
           className={cn(
             "flex flex-col min-h-0",
-            isMaximized ? "col-span-1" : ""
+            isMaximized ? "absolute inset-0 p-0 z-20" : ""
           )}
         >
           <div className="flex-1 min-h-0 relative">
             <Card
               className={cn(
-                "h-full flex flex-col rounded-lg",
-                isMaximized && "rounded-none border-none"
+                "h-full flex flex-col",
+                isMaximized ? "rounded-none border-none" : "rounded-lg"
               )}
             >
               <CardContent className="p-0 flex-grow overflow-hidden rounded-lg">
@@ -690,16 +681,14 @@ export default function Home() {
           </div>
         </div>
       </div>
-       <div className={cn("max-w-screen-2xl mx-auto w-full", isMaximized ? "hidden" : "block")}>
+      <div className={cn("px-4 pb-4 w-full", isMaximized ? "hidden" : "block")}>
         <Textarea
           placeholder="Paste your script here..."
           value={text}
           onChange={(e) => setText(e.target.value)}
-          className="h-32 text-base resize-none"
+          className="h-32 text-base resize-none w-full"
         />
       </div>
     </main>
   );
 }
-
-    
