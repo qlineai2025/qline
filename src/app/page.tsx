@@ -64,7 +64,7 @@ export default function Home() {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [isVoiceControlOn, setIsVoiceControlOn] = useState<boolean>(false);
   const [isProcessingAudio, setIsProcessingAudio] = useState<boolean>(false);
-  const [isHighContrast, setIsHighContrast] = useState<boolean>(false);
+  const [isHighContrast, setIsHighContrast] = useState<boolean>(true);
   const [isMaximized, setIsMaximized] = useState<boolean>(false);
   const [isFlippedHorizontally, setIsFlippedHorizontally] = useState<boolean>(false);
   const [isFlippedVertically, setIsFlippedVertically] = useState<boolean>(false);
@@ -285,236 +285,236 @@ export default function Home() {
           isMaximized ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-3"
         )}
       >
-        <div
-          className={cn(
-            "lg:col-span-1 flex-col gap-8",
-            isMaximized ? "hidden" : "flex"
-          )}
-        >
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="text-primary"/>
-                Script Editor
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Textarea
-                placeholder="Paste your script here..."
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                className="h-64 text-base resize-none"
-              />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="text-primary"/>
-                Controls & Settings
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-6">
-              <div className="flex items-center justify-center gap-4">
-                {loading ? (
-                  <Skeleton className="h-10 w-full" />
-                ) : user ? (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="w-full">
-                         <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4" fill="currentColor"><title>Google</title><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.1-1.02 1.08-2.58 2.03-4.56 2.03-3.86 0-7-3.14-7-7s3.14-7 7-7c2.29 0 3.63.86 4.5 1.75l2.4-2.4C18.49 3.46 15.9 2 12.48 2c-5.45 0-9.94 4.45-9.94 9.9s4.49 9.9 9.94 9.9c3.31 0 5.21-1.1 6.84-2.73 1.69-1.69 2.23-4.03 2.23-6.14s-.04-1.2-.1-1.73h-9.04z"/></svg>
-                        Import from Google
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuItem onClick={handleGoogleImport}>Google Docs</DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleGoogleImport}>Google Slides</DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleGoogleImport}>Google Sheets</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                ) : (
-                  <Button onClick={handleSignIn} variant="outline" className="w-full">
-                    <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4" fill="currentColor"><title>Google</title><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.1-1.02 1.08-2.58 2.03-4.56 2.03-3.86 0-7-3.14-7-7s3.14-7 7-7c2.29 0 3.63.86 4.5 1.75l2.4-2.4C18.49 3.46 15.9 2 12.48 2c-5.45 0-9.94 4.45-9.94 9.9s4.49 9.9 9.94 9.9c3.31 0 5.21-1.1 6.84-2.73 1.69-1.69 2.23-4.03 2.23-6.14s-.04-1.2-.1-1.73h-9.04z"/></svg>
-                    Sign in to Import
+        <div className={cn("lg:col-span-1", isMaximized ? "hidden" : "block")}>
+          <div className="h-[85vh] overflow-y-auto pr-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="text-primary"/>
+                  Controls & Settings
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-6">
+                <div className="flex items-center justify-center gap-4">
+                  {loading ? (
+                    <Skeleton className="h-10 w-full" />
+                  ) : user ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="w-full">
+                           <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4" fill="currentColor"><title>Google</title><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.1-1.02 1.08-2.58 2.03-4.56 2.03-3.86 0-7-3.14-7-7s3.14-7 7-7c2.29 0 3.63.86 4.5 1.75l2.4-2.4C18.49 3.46 15.9 2 12.48 2c-5.45 0-9.94 4.45-9.94 9.9s4.49 9.9 9.94 9.9c3.31 0 5.21-1.1 6.84-2.73 1.69-1.69 2.23-4.03 2.23-6.14s-.04-1.2-.1-1.73h-9.04z"/></svg>
+                          Import from Google
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onClick={handleGoogleImport}>Google Docs</DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleGoogleImport}>Google Slides</DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleGoogleImport}>Google Sheets</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : (
+                    <Button onClick={handleSignIn} variant="outline" className="w-full">
+                      <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4" fill="currentColor"><title>Google</title><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.1-1.02 1.08-2.58 2.03-4.56 2.03-3.86 0-7-3.14-7-7s3.14-7 7-7c2.29 0 3.63.86 4.5 1.75l2.4-2.4C18.49 3.46 15.9 2 12.48 2c-5.45 0-9.94 4.45-9.94 9.9s4.49 9.9 9.94 9.9c3.31 0 5.21-1.1 6.84-2.73 1.69-1.69 2.23-4.03 2.23-6.14s-.04-1.2-.1-1.73h-9.04z"/></svg>
+                      Sign in to Import
+                    </Button>
+                  )}
+                  
+                  <Button onClick={() => setIsPlaying(!isPlaying)} className="w-full">
+                    {isPlaying ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
+                    {isPlaying ? "Pause" : "Play"}
                   </Button>
-                )}
-                
-                <Button onClick={() => setIsPlaying(!isPlaying)} className="w-full">
-                  {isPlaying ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
-                  {isPlaying ? "Pause" : "Play"}
-                </Button>
-                <Button onClick={() => setIsMaximized(!isMaximized)} variant="outline" size="icon" className="shrink-0">
-                  {isMaximized ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
-                </Button>
-              </div>
+                  <Button onClick={() => setIsMaximized(!isMaximized)} variant="outline" size="icon" className="shrink-0">
+                    {isMaximized ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+                  </Button>
+                </div>
 
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="voice-control" className="flex items-center gap-2">
-                    {isVoiceControlOn ? <Mic className="text-accent" /> : <MicOff />}
-                    Voice Control
-                  </Label>
-                   <Switch
-                    id="voice-control"
-                    checked={isVoiceControlOn}
-                    onCheckedChange={setIsVoiceControlOn}
-                  />
-                </div>
-                 {isProcessingAudio && <p className="text-sm text-muted-foreground text-center">Adjusting speed...</p>}
-              </div>
-
-              <div className="space-y-4 pt-4 border-t">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="high-contrast" className="flex items-center gap-2">
-                    <Contrast className="h-4 w-4" />
-                    High Contrast
-                  </Label>
-                   <Switch
-                    id="high-contrast"
-                    checked={isHighContrast}
-                    onCheckedChange={setIsHighContrast}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="flip-horizontal" className="flex items-center gap-2">
-                    <ArrowLeftRight className="h-4 w-4" />
-                    Flip Horizontal
-                  </Label>
-                   <Switch
-                    id="flip-horizontal"
-                    checked={isFlippedHorizontally}
-                    onCheckedChange={setIsFlippedHorizontally}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="flip-vertical" className="flex items-center gap-2">
-                    <ArrowUpDown className="h-4 w-4" />
-                    Flip Vertical
-                  </Label>
-                   <Switch
-                    id="flip-vertical"
-                    checked={isFlippedVertically}
-                    onCheckedChange={setIsFlippedVertically}
-                  />
-                </div>
-              </div>
-
-
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="speed">Scroll Speed: {scrollSpeed.toFixed(0)}</Label>
-                  <Slider
-                    id="speed"
-                    min={0}
-                    max={100}
-                    step={1}
-                    value={[scrollSpeed]}
-                    onValueChange={(value) => setScrollSpeed(value[0])}
-                    disabled={isVoiceControlOn}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="font-size">Font Size: {fontSize}px</Label>
-                  <Slider
-                    id="font-size"
-                    min={12}
-                    max={120}
-                    step={1}
-                    value={[fontSize]}
-                    onValueChange={(value) => setFontSize(value[0])}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="horizontal-margin">Horizontal Margin: {horizontalMargin}%</Label>
-                  <Slider
-                    id="horizontal-margin"
-                    min={0}
-                    max={40}
-                    step={1}
-                    value={[horizontalMargin]}
-                    onValueChange={(value) => setHorizontalMargin(value[0])}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="vertical-margin">Vertical Margin: {verticalMargin}%</Label>
-                  <Slider
-                    id="vertical-margin"
-                    min={0}
-                    max={40}
-                    step={1}
-                    value={[verticalMargin]}
-                    onValueChange={(value) => setVerticalMargin(value[0])}
-                  />
-                </div>
-              </div>
-
-              {user && (
-                <>
-                  <Separator/>
+                <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                          <Avatar className="h-9 w-9">
-                              <AvatarImage src={user.photoURL || ''} alt={user.displayName || ''}/>
-                              <AvatarFallback>{user.displayName?.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <div className="grid gap-0.5">
-                              <p className="font-medium text-sm">{user.displayName}</p>
-                              <p className="text-xs text-muted-foreground">{user.email}</p>
-                          </div>
-                      </div>
-                      <Button variant="ghost" size="icon" onClick={handleSignOut}>
-                          <LogOut className="h-4 w-4" />
-                      </Button>
+                    <Label htmlFor="voice-control" className="flex items-center gap-2">
+                      {isVoiceControlOn ? <Mic className="text-accent" /> : <MicOff />}
+                      Voice Control
+                    </Label>
+                     <Switch
+                      id="voice-control"
+                      checked={isVoiceControlOn}
+                      onCheckedChange={setIsVoiceControlOn}
+                    />
                   </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
+                   {isProcessingAudio && <p className="text-sm text-muted-foreground text-center">Adjusting speed...</p>}
+                </div>
+
+                <div className="space-y-4 pt-4 border-t">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="high-contrast" className="flex items-center gap-2">
+                      <Contrast className="h-4 w-4" />
+                      High Contrast
+                    </Label>
+                     <Switch
+                      id="high-contrast"
+                      checked={isHighContrast}
+                      onCheckedChange={setIsHighContrast}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="flip-horizontal" className="flex items-center gap-2">
+                      <ArrowLeftRight className="h-4 w-4" />
+                      Flip Horizontal
+                    </Label>
+                     <Switch
+                      id="flip-horizontal"
+                      checked={isFlippedHorizontally}
+                      onCheckedChange={setIsFlippedHorizontally}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="flip-vertical" className="flex items-center gap-2">
+                      <ArrowUpDown className="h-4 w-4" />
+                      Flip Vertical
+                    </Label>
+                     <Switch
+                      id="flip-vertical"
+                      checked={isFlippedVertically}
+                      onCheckedChange={setIsFlippedVertically}
+                    />
+                  </div>
+                </div>
+
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="speed">Scroll Speed: {scrollSpeed.toFixed(0)}</Label>
+                    <Slider
+                      id="speed"
+                      min={0}
+                      max={100}
+                      step={1}
+                      value={[scrollSpeed]}
+                      onValueChange={(value) => setScrollSpeed(value[0])}
+                      disabled={isVoiceControlOn}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="font-size">Font Size: {fontSize}px</Label>
+                    <Slider
+                      id="font-size"
+                      min={12}
+                      max={120}
+                      step={1}
+                      value={[fontSize]}
+                      onValueChange={(value) => setFontSize(value[0])}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="horizontal-margin">Horizontal Margin: {horizontalMargin}%</Label>
+                    <Slider
+                      id="horizontal-margin"
+                      min={0}
+                      max={40}
+                      step={1}
+                      value={[horizontalMargin]}
+                      onValueChange={(value) => setHorizontalMargin(value[0])}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="vertical-margin">Vertical Margin: {verticalMargin}%</Label>
+                    <Slider
+                      id="vertical-margin"
+                      min={0}
+                      max={40}
+                      step={1}
+                      value={[verticalMargin]}
+                      onValueChange={(value) => setVerticalMargin(value[0])}
+                    />
+                  </div>
+                </div>
+
+                {user && (
+                  <>
+                    <Separator/>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <Avatar className="h-9 w-9">
+                                <AvatarImage src={user.photoURL || ''} alt={user.displayName || ''}/>
+                                <AvatarFallback>{user.displayName?.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div className="grid gap-0.5">
+                                <p className="font-medium text-sm">{user.displayName}</p>
+                                <p className="text-xs text-muted-foreground">{user.email}</p>
+                            </div>
+                        </div>
+                        <Button variant="ghost" size="icon" onClick={handleSignOut}>
+                            <LogOut className="h-4 w-4" />
+                        </Button>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         <div
           className={cn(
-            "lg:col-span-2",
-            isMaximized ? "h-screen" : "h-[85vh]"
+            "lg:col-span-2 flex flex-col gap-8",
+            isMaximized ? "col-span-1 lg:col-span-3 h-screen" : "h-[85vh]"
           )}
         >
-          <Card
-            className={cn(
-              "h-full flex flex-col",
-              isMaximized && "rounded-none border-none"
-            )}
-          >
-            <CardContent className="p-0 flex-grow overflow-hidden">
-              <div
-                ref={displayRef}
-                className={cn(
-                  "h-full overflow-y-auto scroll-smooth flex justify-center",
-                  isHighContrast && "bg-black",
-                  isFlippedHorizontally && "scale-x-[-1]",
-                  isFlippedVertically && "scale-y-[-1]"
-                )}
-                style={{
-                  paddingTop: `${verticalMargin}%`,
-                  paddingBottom: `${verticalMargin}%`,
-                }}
-              >
+          <div className="flex-1 min-h-0">
+            <Card
+              className={cn(
+                "h-full flex flex-col",
+                isMaximized && "rounded-none border-none"
+              )}
+            >
+              <CardContent className="p-0 flex-grow overflow-hidden">
                 <div
+                  ref={displayRef}
                   className={cn(
-                    "whitespace-pre-wrap break-words",
-                    isHighContrast ? "text-white" : "text-foreground"
+                    "h-full overflow-y-auto scroll-smooth flex justify-center items-center",
+                    isHighContrast && "bg-black",
+                    isFlippedHorizontally && "scale-x-[-1]",
+                    isFlippedVertically && "scale-y-[-1]"
                   )}
                   style={{
-                    fontSize: `${fontSize}px`,
-                    lineHeight: 1.5,
-                    width: `${100 - horizontalMargin * 2}%`,
+                    paddingTop: `${verticalMargin}%`,
+                    paddingBottom: `${verticalMargin}%`,
                   }}
                 >
-                  {text}
+                  <div
+                    className={cn(
+                      "whitespace-pre-wrap break-words",
+                      isHighContrast ? "text-white" : "text-foreground"
+                    )}
+                    style={{
+                      fontSize: `${fontSize}px`,
+                      lineHeight: 1.5,
+                      width: `${100 - horizontalMargin * 2}%`,
+                    }}
+                  >
+                    {text}
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
+          <div className={cn(isMaximized ? "hidden" : "block")}>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="text-primary"/>
+                  Script Editor
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Textarea
+                  placeholder="Paste your script here..."
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  className="h-64 text-base resize-none"
+                />
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </main>
