@@ -375,6 +375,20 @@ export default function Home() {
     });
   };
 
+  const handleNextSlide = useCallback(() => {
+    const newIndex = Math.min(currentSlideIndex + 1, slides.length - 1);
+    setCurrentSlideIndex(newIndex);
+    setText(slides[newIndex]?.speakerNotes || '');
+    channelRef.current?.postMessage({ type: 'slide_change', payload: { newIndex } });
+  }, [currentSlideIndex, slides]);
+
+  const handlePrevSlide = useCallback(() => {
+    const newIndex = Math.max(currentSlideIndex - 1, 0);
+    setCurrentSlideIndex(newIndex);
+    setText(slides[newIndex]?.speakerNotes || '');
+    channelRef.current?.postMessage({ type: 'slide_change', payload: { newIndex } });
+  }, [currentSlideIndex, slides]);
+
   const updatePositionFromSpeech = useCallback(async () => {
     if (audioChunksRef.current.length === 0) return;
     setIsProcessingAudio(true);
@@ -394,6 +408,21 @@ export default function Home() {
         setScrollSpeed(adjustedScrollSpeed);
       }
       
+      const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
+      if (
+        prompterMode === 'slides' &&
+        slideDisplayMode === 'notes' &&
+        wordCount > 0 &&
+        lastSpokenWordIndex >= wordCount - 2 // A buffer for the end
+      ) {
+        if (currentSlideIndex < slides.length - 1) {
+          handleNextSlide();
+          return; 
+        } else {
+          setIsPlaying(false);
+        }
+      }
+
       const targetWord = document.getElementById(`word-${lastSpokenWordIndex}`);
       if (targetWord) {
         targetWord.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -410,7 +439,7 @@ export default function Home() {
     } finally {
       setIsProcessingAudio(false);
     }
-  }, [text, toast]);
+  }, [text, toast, prompterMode, slideDisplayMode, currentSlideIndex, slides, handleNextSlide]);
 
   const startRecording = useCallback(() => {
     navigator.mediaDevices.getUserMedia({ audio: true })
@@ -472,13 +501,19 @@ export default function Home() {
         currentDisplay.scrollTop += scrollAmount;
       }
       
-      if (currentDisplay.scrollTop + currentDisplay.clientHeight >= currentDisplay.scrollHeight - 1) {
-          setIsPlaying(false);
+      const isAtEnd = currentDisplay.scrollTop + currentDisplay.clientHeight >= currentDisplay.scrollHeight - 1;
+
+      if (isAtEnd) {
+        if (prompterMode === 'slides' && slideDisplayMode === 'notes' && currentSlideIndex < slides.length - 1) {
+            handleNextSlide();
+        } else {
+            setIsPlaying(false);
+        }
       } else {
           animationFrameRef.current = requestAnimationFrame(scrollAnimation);
       }
     }
-  }, []);
+  }, [prompterMode, slideDisplayMode, currentSlideIndex, slides, handleNextSlide]);
 
   const startScroll = useCallback(() => {
     lastTimeRef.current = null;
@@ -556,19 +591,6 @@ export default function Home() {
     }
     setIsPlaying(newIsPlaying);
     channelRef.current?.postMessage({ type: newIsPlaying ? "play" : "pause" });
-  };
-
-  const handleNextSlide = () => {
-    const newIndex = Math.min(currentSlideIndex + 1, slides.length - 1);
-    setCurrentSlideIndex(newIndex);
-    setText(slides[newIndex]?.speakerNotes || '');
-    channelRef.current?.postMessage({ type: 'slide_change', payload: { newIndex } });
-  };
-  const handlePrevSlide = () => {
-    const newIndex = Math.max(currentSlideIndex - 1, 0);
-    setCurrentSlideIndex(newIndex);
-    setText(slides[newIndex]?.speakerNotes || '');
-    channelRef.current?.postMessage({ type: 'slide_change', payload: { newIndex } });
   };
   
   const popoverContentClass = "w-[150px] p-2";
