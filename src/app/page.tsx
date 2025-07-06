@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 import { useAuth } from "@/components/auth-provider";
 import { auth, googleProvider } from "@/lib/firebase";
-import { signInWithPopup, signOut } from "firebase/auth";
+import { signInWithPopup, signOut, GoogleAuthProvider } from "firebase/auth";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -50,6 +50,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { GoogleDocPicker } from "@/components/google-doc-picker";
 
 
 const DEFAULT_TEXT = `Welcome to AutoScroll Teleprompter.
@@ -65,7 +66,7 @@ Use the settings on the left to adjust the font size, margins, and manual scroll
 
 export default function Home() {
   const { toast } = useToast();
-  const { user, loading } = useAuth();
+  const { user, loading, setAccessToken } = useAuth();
 
   const [text, setText] = useState<string>(DEFAULT_TEXT);
   const [scrollSpeed, setScrollSpeed] = useState<number>(30);
@@ -91,6 +92,8 @@ export default function Home() {
   
   const [isVerticalMarginPopoverOpen, setIsVerticalMarginPopoverOpen] = useState(false);
   const [verticalMarginInput, setVerticalMarginInput] = useState(String(verticalMargin));
+
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
 
 
   const displayRef = useRef<HTMLDivElement>(null);
@@ -125,7 +128,12 @@ export default function Home() {
       return;
     }
     try {
-      await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      const token = credential?.accessToken;
+      if (token) {
+        setAccessToken(token);
+      }
       toast({
         title: "Signed In",
         description: "You have successfully signed in.",
@@ -144,6 +152,7 @@ export default function Home() {
     if (!auth) return;
     try {
       await signOut(auth);
+      setAccessToken(null);
       toast({
         title: "Signed Out",
         description: "You have successfully signed out.",
@@ -158,11 +167,20 @@ export default function Home() {
     }
   };
 
-  const handleGoogleImport = () => {
-    toast({
-      title: "Coming Soon!",
-      description: "Import from Google is not yet implemented.",
-    });
+  const handleImport = (content: string) => {
+    setText(content);
+    setIsPickerOpen(false);
+  };
+  
+  const handleGoogleImport = (type: 'Docs' | 'Slides' | 'Sheets') => {
+    if (type === 'Docs') {
+      setIsPickerOpen(true);
+    } else {
+      toast({
+        title: "Coming Soon!",
+        description: `Import from Google ${type} is not yet implemented.`,
+      });
+    }
   };
 
   const blobToDataUri = (blob: Blob): Promise<string> => {
@@ -251,50 +269,42 @@ export default function Home() {
     audioChunksRef.current = [];
   }, []);
 
-  useEffect(() => {
-    let lastTime: number | null = null;
-    
-    const animationLoop = (currentTime: number) => {
-      if (!displayRef.current) return;
-      if (lastTime === null) {
-        lastTime = currentTime;
-        animationFrameRef.current = requestAnimationFrame(animationLoop);
+  const scrollAnimation = useCallback(() => {
+    if (!isPlaying || !displayRef.current) {
+        if (animationFrameRef.current) {
+            cancelAnimationFrame(animationFrameRef.current);
+            animationFrameRef.current = null;
+        }
         return;
-      }
-      
-      const deltaTime = currentTime - lastTime;
-      lastTime = currentTime;
-      
-      const currentDisplay = displayRef.current;
-      if (currentDisplay.scrollHeight > currentDisplay.clientHeight) {
-        const pixelsPerSecond = scrollSpeedRef.current;
-        const scrollAmount = (pixelsPerSecond * deltaTime) / 1000;
-        currentDisplay.scrollTop += scrollAmount;
-      }
-
-      if (currentDisplay.scrollTop + currentDisplay.clientHeight >= currentDisplay.scrollHeight - 1) {
-        setIsPlaying(false);
-      } else {
-        animationFrameRef.current = requestAnimationFrame(animationLoop);
-      }
-    };
-
-    if (isPlaying) {
-      animationFrameRef.current = requestAnimationFrame(animationLoop);
-    } else {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
     }
 
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
+    const animate = (timestamp: number) => {
+        if (!displayRef.current) return;
+
+        const currentDisplay = displayRef.current;
+        if (currentDisplay.scrollHeight > currentDisplay.clientHeight) {
+            currentDisplay.scrollTop += scrollSpeedRef.current * (1 / 60);
+        }
+
+        if (currentDisplay.scrollTop + currentDisplay.clientHeight >= currentDisplay.scrollHeight - 1) {
+            setIsPlaying(false);
+        } else {
+            animationFrameRef.current = requestAnimationFrame(animate);
+        }
     };
+    animationFrameRef.current = requestAnimationFrame(animate);
+
   }, [isPlaying]);
+
+  useEffect(() => {
+    scrollAnimation();
+    return () => {
+        if (animationFrameRef.current) {
+            cancelAnimationFrame(animationFrameRef.current);
+        }
+    };
+  }, [isPlaying, scrollAnimation]);
+
 
   useEffect(() => {
     if (isPlaying && isVoiceControlOn) {
@@ -362,9 +372,9 @@ export default function Home() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent>
-                            <DropdownMenuItem onClick={handleGoogleImport}>Google Docs</DropdownMenuItem>
-                            <DropdownMenuItem onClick={handleGoogleImport}>Google Slides</DropdownMenuItem>
-                            <DropdownMenuItem onClick={handleGoogleImport}>Google Sheets</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleGoogleImport('Docs')}>Google Docs</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleGoogleImport('Slides')}>Google Slides</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleGoogleImport('Sheets')}>Google Sheets</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       ) : (
@@ -666,6 +676,11 @@ export default function Home() {
           className="h-32 text-base resize-none w-full"
         />
       </div>
+       <GoogleDocPicker
+        open={isPickerOpen}
+        onOpenChange={setIsPickerOpen}
+        onImport={handleImport}
+      />
     </main>
   );
 }
