@@ -58,6 +58,7 @@ import {
   PenSquare,
   WrapText,
   ChevronsUpDown,
+  Wand2,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -619,6 +620,35 @@ export default function Home() {
     }
   };
 
+  const handleCleanupScript = async () => {
+    if (!text) {
+      toast({
+        variant: "destructive",
+        title: "Empty Script",
+        description: "There is no script to clean up.",
+      });
+      return;
+    }
+    setIsAiEditing(true);
+    try {
+      const modifiedScript = await assistWithScript({ command: 'cleanup', scriptText: text });
+      setText(modifiedScript);
+      toast({
+        title: "Script Cleaned Up",
+        description: `The script has been automatically formatted.`,
+      });
+    } catch (error: any) {
+      console.error("AI script cleanup error:", error);
+      toast({
+        variant: "destructive",
+        title: "AI Error",
+        description: error.message || "Could not clean up the script.",
+      });
+    } finally {
+      setIsAiEditing(false);
+    }
+  };
+
   const filteredSettings = savedSettings.filter(s =>
     s.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -1112,12 +1142,29 @@ export default function Home() {
         <Card className="overflow-hidden">
           <div className="relative">
             <TooltipProvider>
+              <div className="absolute right-1 top-1 z-10 flex items-center">
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="absolute right-1 top-1 z-10 h-8 w-8"
+                            className="h-8 w-8"
+                            onClick={handleCleanupScript}
+                            disabled={isAiEditing}
+                        >
+                            <Wand2 className="h-4 w-4" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Cleanup Script</p>
+                    </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
                             onClick={() => setIsEditorExpanded(!isEditorExpanded)}
                         >
                             <ChevronsUpDown className="h-4 w-4" />
@@ -1127,6 +1174,7 @@ export default function Home() {
                         <p>{isEditorExpanded ? "Collapse" : "Expand"}</p>
                     </TooltipContent>
                 </Tooltip>
+              </div>
             </TooltipProvider>
 
             <Textarea

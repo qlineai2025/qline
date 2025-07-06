@@ -14,10 +14,11 @@ import { z } from 'genkit';
 const commandInstructionMap = {
   fix: "Correct any spelling and grammar mistakes in the provided text.",
   rewrite: "Rewrite the provided text to be more clear, concise, and engaging for a speaker.",
-  format: "Format the provided text for better readability on a teleprompter. This may include adding line breaks, standardizing punctuation, and ensuring consistent spacing. Do not change the wording, only the formatting."
+  format: "Format the provided text for better readability on a teleprompter. This may include adding line breaks, standardizing punctuation, and ensuring consistent spacing. Do not change the wording, only the formatting.",
+  cleanup: "Clean up and reformat the entire script. Remove any timecode stamps (e.g., from .srt or .vtt files). Reformat the text into clear paragraphs. Identify any speaker names (e.g., 'John:', 'SPEAKER 2:') and convert them to ALL CAPS followed by a colon."
 };
 
-const ScriptAssistantCommandSchema = z.enum(['fix', 'rewrite', 'format']);
+const ScriptAssistantCommandSchema = z.enum(['fix', 'rewrite', 'format', 'cleanup']);
 export type ScriptAssistantCommand = z.infer<typeof ScriptAssistantCommandSchema>;
 
 const ScriptAssistantFlowInputSchema = z.object({
