@@ -216,6 +216,20 @@ export default function Home() {
     }
   }, [text]);
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (isMaximized && event.key === 'Escape') {
+        setIsMaximized(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isMaximized]);
+
   return (
     <main
       className={cn(
