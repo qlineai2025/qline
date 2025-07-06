@@ -10,7 +10,7 @@ import { auth, googleProvider } from "@/lib/firebase";
 import { signInWithPopup, signOut } from "firebase/auth";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
@@ -36,7 +36,6 @@ import {
   Play,
   Pause,
   Mic,
-  Settings,
   Maximize,
   Minimize,
   Contrast,
@@ -46,7 +45,8 @@ import {
   Gauge,
   Text as TextIcon,
   StretchHorizontal,
-  StretchVertical
+  StretchVertical,
+  X
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -55,11 +55,11 @@ import { Separator } from "@/components/ui/separator";
 
 const DEFAULT_TEXT = `Welcome to AutoScroll Teleprompter.
 
-You can start by pasting your script here, or by importing a .txt file.
+You can start by pasting your script here.
 
-Press the play button to start scrolling.
+Press the play button to start scrolling. The app will automatically enter full-screen mode.
 
-Enable voice control to have the teleprompter automatically adjust its speed to your reading pace.
+Enable voice control (on by default) to have the teleprompter automatically adjust its speed to your reading pace.
 
 Use the settings on the left to adjust the font size, margins, and manual scroll speed.
 `;
@@ -98,17 +98,19 @@ export default function Home() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
 
   useEffect(() => { setSpeedInput(String(scrollSpeed)) }, [scrollSpeed]);
   useEffect(() => { setFontSizeInput(String(fontSize)) }, [fontSize]);
   useEffect(() => { setHorizontalMarginInput(String(horizontalMargin)) }, [horizontalMargin]);
   useEffect(() => { setVerticalMarginInput(String(verticalMargin)) }, [verticalMargin]);
 
-  const handleSave = (setter: React.Dispatch<React.SetStateAction<number>>, value: string, min: number, max: number) => {
+  const handleSave = (setter: React.Dispatch<React.SetStateAction<number>>, value: string, min: number, max: number, popoverSetter: React.Dispatch<React.SetStateAction<boolean>>) => {
     const numValue = parseInt(value, 10);
     if (!isNaN(numValue) && numValue >= min && numValue <= max) {
       setter(numValue);
     }
+    popoverSetter(false);
   };
 
   const handleSignIn = async () => {
@@ -248,7 +250,7 @@ export default function Home() {
   }, []);
 
   const scroll = useCallback(() => {
-    if (!displayRef.current || !isPlaying) return;
+    if (!displayRef.current) return;
 
     const currentDisplay = displayRef.current;
     const pixelsPerSecond = scrollSpeed;
@@ -259,23 +261,27 @@ export default function Home() {
     if (currentDisplay.scrollTop + currentDisplay.clientHeight >= currentDisplay.scrollHeight -1) {
       setIsPlaying(false);
     }
-  }, [scrollSpeed, isPlaying]);
+  }, [scrollSpeed]);
 
   useEffect(() => {
-    let animationFrameId: number | null = null;
-    
     const animate = () => {
-      scroll();
-      animationFrameId = requestAnimationFrame(animate);
+      if (isPlaying) {
+        scroll();
+        animationFrameRef.current = requestAnimationFrame(animate);
+      }
     };
 
     if (isPlaying) {
-      animationFrameId = requestAnimationFrame(animate);
+      animationFrameRef.current = requestAnimationFrame(animate);
+    } else {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
     }
 
     return () => {
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
       }
     };
   }, [isPlaying, scroll]);
@@ -297,12 +303,12 @@ export default function Home() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && (isMaximized || isSpeedPopoverOpen || isFontSizePopoverOpen || isHorizontalMarginPopoverOpen || isVerticalMarginPopoverOpen)) {
-        setIsMaximized(false);
-        setIsSpeedPopoverOpen(false);
-        setIsFontSizePopoverOpen(false);
-        setIsHorizontalMarginPopoverOpen(false);
-        setIsVerticalMarginPopoverOpen(false);
+      if (event.key === 'Escape') {
+        if(isMaximized) setIsMaximized(false);
+        if(isSpeedPopoverOpen) setIsSpeedPopoverOpen(false);
+        if(isFontSizePopoverOpen) setIsFontSizePopoverOpen(false);
+        if(isHorizontalMarginPopoverOpen) setIsHorizontalMarginPopoverOpen(false);
+        if(isVerticalMarginPopoverOpen) setIsVerticalMarginPopoverOpen(false);
       }
     };
 
@@ -322,6 +328,8 @@ export default function Home() {
     }
     setIsPlaying(!isPlaying);
   };
+  
+  const popoverContentClass = "w-[150px] p-2";
 
   return (
     <main className="flex h-screen flex-col bg-background">
@@ -398,10 +406,7 @@ export default function Home() {
 
                     <div className="flex items-start justify-between pt-2 border-t w-full">
                         <div className="flex flex-col items-center gap-3">
-                          <Popover open={isSpeedPopoverOpen} onOpenChange={(isOpen) => {
-                                if (!isOpen) handleSave(setScrollSpeed, speedInput, 0, 100);
-                                setIsSpeedPopoverOpen(isOpen);
-                            }}>
+                          <Popover open={isSpeedPopoverOpen} onOpenChange={setIsSpeedPopoverOpen}>
                                <Tooltip>
                                 <TooltipTrigger asChild>
                                   <PopoverTrigger asChild>
@@ -410,7 +415,8 @@ export default function Home() {
                                 </TooltipTrigger>
                                 <TooltipContent><p>Scroll Speed: {scrollSpeed.toFixed(0)}</p></TooltipContent>
                                </Tooltip>
-                               <PopoverContent className="w-[150px] p-2">
+                               <PopoverContent className={popoverContentClass}
+                                onPointerDownOutside={() => handleSave(setScrollSpeed, speedInput, 0, 100, setIsSpeedPopoverOpen)}>
                                     <Input
                                       id="speed-input"
                                       type="number"
@@ -419,10 +425,7 @@ export default function Home() {
                                       min={0}
                                       max={100}
                                       onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                          handleSave(setScrollSpeed, speedInput, 0, 100);
-                                          setIsSpeedPopoverOpen(false);
-                                        }
+                                        if (e.key === 'Enter') handleSave(setScrollSpeed, speedInput, 0, 100, setIsSpeedPopoverOpen)
                                       }}
                                     />
                                </PopoverContent>
@@ -440,10 +443,7 @@ export default function Home() {
                           />
                         </div>
                         <div className="flex flex-col items-center gap-3">
-                           <Popover open={isFontSizePopoverOpen} onOpenChange={(isOpen) => {
-                                if (!isOpen) handleSave(setFontSize, fontSizeInput, 12, 120);
-                                setIsFontSizePopoverOpen(isOpen);
-                            }}>
+                           <Popover open={isFontSizePopoverOpen} onOpenChange={setIsFontSizePopoverOpen}>
                                 <Tooltip>
                                 <TooltipTrigger asChild>
                                   <PopoverTrigger asChild>
@@ -452,7 +452,8 @@ export default function Home() {
                                 </TooltipTrigger>
                                 <TooltipContent><p>Font Size: {fontSize}px</p></TooltipContent>
                                </Tooltip>
-                               <PopoverContent className="w-[150px] p-2">
+                               <PopoverContent className={popoverContentClass}
+                                onPointerDownOutside={() => handleSave(setFontSize, fontSizeInput, 12, 120, setIsFontSizePopoverOpen)}>
                                     <Input
                                       id="font-size-input"
                                       type="number"
@@ -461,10 +462,7 @@ export default function Home() {
                                       min={12}
                                       max={120}
                                       onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                          handleSave(setFontSize, fontSizeInput, 12, 120);
-                                          setIsFontSizePopoverOpen(false);
-                                        }
+                                        if (e.key === 'Enter') handleSave(setFontSize, fontSizeInput, 12, 120, setIsFontSizePopoverOpen);
                                       }}
                                     />
                                </PopoverContent>
@@ -481,10 +479,7 @@ export default function Home() {
                           />
                         </div>
                         <div className="flex flex-col items-center gap-3">
-                          <Popover open={isHorizontalMarginPopoverOpen} onOpenChange={(isOpen) => {
-                                if (!isOpen) handleSave(setHorizontalMargin, horizontalMarginInput, 0, 40);
-                                setIsHorizontalMarginPopoverOpen(isOpen);
-                            }}>
+                          <Popover open={isHorizontalMarginPopoverOpen} onOpenChange={setIsHorizontalMarginPopoverOpen}>
                                <Tooltip>
                                 <TooltipTrigger asChild>
                                   <PopoverTrigger asChild>
@@ -493,7 +488,8 @@ export default function Home() {
                                 </TooltipTrigger>
                                 <TooltipContent><p>Horizontal Margin: {horizontalMargin}%</p></TooltipContent>
                                </Tooltip>
-                               <PopoverContent className="w-[150px] p-2">
+                               <PopoverContent className={popoverContentClass}
+                                onPointerDownOutside={() => handleSave(setHorizontalMargin, horizontalMarginInput, 0, 40, setIsHorizontalMarginPopoverOpen)}>
                                     <Input
                                       id="h-margin-input"
                                       type="number"
@@ -502,10 +498,7 @@ export default function Home() {
                                       min={0}
                                       max={40}
                                       onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                          handleSave(setHorizontalMargin, horizontalMarginInput, 0, 40);
-                                          setIsHorizontalMarginPopoverOpen(false);
-                                        }
+                                        if (e.key === 'Enter') handleSave(setHorizontalMargin, horizontalMarginInput, 0, 40, setIsHorizontalMarginPopoverOpen);
                                       }}
                                     />
                                </PopoverContent>
@@ -522,10 +515,7 @@ export default function Home() {
                           />
                         </div>
                         <div className="flex flex-col items-center gap-3">
-                          <Popover open={isVerticalMarginPopoverOpen} onOpenChange={(isOpen) => {
-                                if (!isOpen) handleSave(setVerticalMargin, verticalMarginInput, 0, 40);
-                                setIsVerticalMarginPopoverOpen(isOpen);
-                            }}>
+                          <Popover open={isVerticalMarginPopoverOpen} onOpenChange={setIsVerticalMarginPopoverOpen}>
                                <Tooltip>
                                 <TooltipTrigger asChild>
                                   <PopoverTrigger asChild>
@@ -534,7 +524,8 @@ export default function Home() {
                                 </TooltipTrigger>
                                 <TooltipContent><p>Vertical Margin: {verticalMargin}%</p></TooltipContent>
                                </Tooltip>
-                               <PopoverContent className="w-[150px] p-2">
+                               <PopoverContent className={popoverContentClass}
+                                onPointerDownOutside={() => handleSave(setVerticalMargin, verticalMarginInput, 0, 40, setIsVerticalMarginPopoverOpen)}>
                                     <Input
                                       id="v-margin-input"
                                       type="number"
@@ -543,10 +534,7 @@ export default function Home() {
                                       min={0}
                                       max={40}
                                       onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                          handleSave(setVerticalMargin, verticalMarginInput, 0, 40);
-                                          setIsVerticalMarginPopoverOpen(false);
-                                        }
+                                        if (e.key === 'Enter') handleSave(setVerticalMargin, verticalMarginInput, 0, 40, setIsVerticalMarginPopoverOpen);
                                       }}
                                     />
                                </PopoverContent>
@@ -576,7 +564,7 @@ export default function Home() {
                                 <div className="grid gap-0.5">
                                     <p className="font-medium text-sm">{user.displayName}</p>
                                     <p className="text-xs text-muted-foreground">{user.email}</p>
-                                </div>
+                                d</div>
                             </div>
                             <Tooltip>
                                 <TooltipTrigger asChild>
@@ -611,7 +599,7 @@ export default function Home() {
                 <div
                   ref={displayRef}
                   className={cn(
-                    "h-full overflow-y-auto scroll-smooth flex",
+                    "h-full overflow-y-auto scroll-smooth flex justify-center items-center",
                     isHighContrast && "bg-black",
                     isFlippedHorizontally && "scale-x-[-1]",
                     isFlippedVertically && "scale-y-[-1]"
@@ -645,7 +633,7 @@ export default function Home() {
                 size="icon"
                 className={cn(
                   "absolute bottom-4 right-4 z-10",
-                  isHighContrast && "bg-black text-white hover:bg-black/80 border border-white"
+                  isHighContrast && "bg-black text-white hover:bg-black/80"
                 )}
               >
                {isMaximized ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
@@ -663,5 +651,4 @@ export default function Home() {
       </div>
     </main>
   );
-
-    
+}
