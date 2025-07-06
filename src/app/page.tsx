@@ -57,6 +57,7 @@ import {
   SpellCheck,
   PenSquare,
   WrapText,
+  ChevronsUpDown,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -113,6 +114,7 @@ export default function Home() {
   const [isFlippedVertically, setIsFlippedVertically] = useState<boolean>(false);
   const [isPresenterModeActive, setIsPresenterModeActive] = useState(false);
   const [isAiEditing, setIsAiEditing] = useState(false);
+  const [isEditorExpanded, setIsEditorExpanded] = useState(true);
 
 
   const [isSpeedPopoverOpen, setIsSpeedPopoverOpen] = useState(false);
@@ -637,6 +639,23 @@ export default function Home() {
     }
   };
 
+  // Effect to clear loadedSettingName if settings are changed from a loaded preset
+  useEffect(() => {
+    if (!loadedSettingName) return;
+
+    const currentSettingsMatch = savedSettings.find(s => 
+      s.name === loadedSettingName &&
+      s.scrollSpeed === scrollSpeed &&
+      s.fontSize === fontSize &&
+      s.horizontalMargin === horizontalMargin &&
+      s.verticalMargin === verticalMargin
+    );
+
+    if (!currentSettingsMatch) {
+      setLoadedSettingName(null);
+    }
+  }, [scrollSpeed, fontSize, horizontalMargin, verticalMargin, loadedSettingName, savedSettings]);
+
   return (
     <main className="flex h-screen flex-col bg-background" onClickCapture={() => { if (contextMenu) setContextMenu(null)}}>
       <div className="grid flex-1 grid-cols-[auto_1fr] gap-4 p-4 min-h-0">
@@ -1090,21 +1109,47 @@ export default function Home() {
         </div>
       </div>
       <div className={cn("px-4 pb-4 w-full", isMaximized ? "hidden" : "block")}>
-        <div className="relative">
-           <Textarea
-              placeholder="Paste your script here..."
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onContextMenu={handleContextMenu}
-              className="h-32 text-base resize-none w-full pr-4"
-              disabled={isAiEditing}
-          />
-          {isAiEditing && (
-              <div className="absolute bottom-2 right-2 flex items-center gap-1">
+        <Card className="overflow-hidden">
+          <div className="flex items-center justify-between p-1 pl-4 bg-muted/20">
+            <h3 className="text-sm font-medium text-muted-foreground">
+              Script Editor
+            </h3>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setIsEditorExpanded(!isEditorExpanded)}
+                  >
+                    <ChevronsUpDown className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{isEditorExpanded ? "Collapse" : "Expand"}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          <div className={cn(isEditorExpanded ? "border-t" : "")}>
+            <div className={cn("relative", !isEditorExpanded && "hidden")}>
+              <Textarea
+                placeholder="Paste your script here..."
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onContextMenu={handleContextMenu}
+                className="h-32 text-base resize-none w-full rounded-none border-0 bg-transparent focus-visible:ring-0"
+                disabled={isAiEditing}
+              />
+              {isAiEditing && (
+                <div className="absolute bottom-2 right-2 flex items-center gap-1">
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-              </div>
-          )}
-        </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </Card>
       </div>
        <GoogleDocPicker
         open={isPickerOpen}
