@@ -3,6 +3,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { trackSpeechPosition } from "@/ai/flows/track-speech-position";
+import { assistWithScript } from "@/ai/flows/script-assistant-flow.ts";
 import { cn } from "@/lib/utils";
 
 import { useAuth } from "@/components/auth-provider";
@@ -52,6 +53,8 @@ import {
   Check,
   Search,
   Trash2,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -104,6 +107,9 @@ export default function Home() {
   const [isMaximized, setIsMaximized] = useState<boolean>(false);
   const [isFlippedHorizontally, setIsFlippedHorizontally] = useState<boolean>(false);
   const [isFlippedVertically, setIsFlippedVertically] = useState<boolean>(false);
+  const [isPresenterModeActive, setIsPresenterModeActive] = useState(false);
+  const [isAiEditing, setIsAiEditing] = useState(false);
+
 
   const [isSpeedPopoverOpen, setIsSpeedPopoverOpen] = useState(false);
   const [speedInput, setSpeedInput] = useState(String(scrollSpeed));
@@ -215,6 +221,20 @@ export default function Home() {
       window.removeEventListener("beforeunload", handleUnload);
     };
   }, []);
+  
+  // Check if presenter window is closed
+  useEffect(() => {
+    if (!isPresenterModeActive) return;
+
+    const intervalId = setInterval(() => {
+        if (prompterWindowRef.current?.closed) {
+            setIsPresenterModeActive(false);
+            clearInterval(intervalId);
+        }
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [isPresenterModeActive]);
 
   // Sync settings with localStorage and presenter window
   useEffect(() => {
@@ -315,6 +335,15 @@ export default function Home() {
       prompterWindowRef.current.focus();
     } else {
       prompterWindowRef.current = window.open("/presenter", "_blank");
+      if (prompterWindowRef.current) {
+        setIsPresenterModeActive(true);
+      } else {
+        toast({
+            variant: "destructive",
+            title: "Popup Blocked",
+            description: "Please allow popups for this site to use Assist Mode.",
+        });
+      }
     }
   };
 
@@ -567,6 +596,35 @@ export default function Home() {
     setSavedSettings(prev => prev.filter(s => s.id !== id));
     toast({ title: "Setting Deleted", description: "The preset has been removed." });
   };
+  
+  const handleAiAssist = async (command: 'fix' | 'rewrite' | 'format') => {
+    if (!text.trim()) {
+        toast({
+            variant: "destructive",
+            title: "Empty Script",
+            description: "There's no text to edit. Please paste your script first.",
+        });
+        return;
+    }
+    setIsAiEditing(true);
+    try {
+        const modifiedText = await assistWithScript({ scriptText: text, command });
+        setText(modifiedText);
+        toast({
+            title: "Script Updated",
+            description: `Your script has been ${command === 'fix' ? 'fixed' : command} by AI.`,
+        });
+    } catch (error: any) {
+        console.error("AI script assistance error:", error);
+        toast({
+            variant: "destructive",
+            title: "AI Error",
+            description: error.message || "Could not modify the script.",
+        });
+    } finally {
+        setIsAiEditing(false);
+    }
+  };
 
   const filteredSettings = savedSettings.filter(s =>
     s.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -620,11 +678,11 @@ export default function Home() {
                         </Tooltip>
                          <Tooltip>
                             <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" onClick={handlePresent}>
+                                <Button variant="ghost" size="icon" onClick={handlePresent} className={cn(isPresenterModeActive && "text-accent")}>
                                     <ScreenShare />
                                 </Button>
                             </TooltipTrigger>
-                            <TooltipContent><p>Project to second screen</p></TooltipContent>
+                            <TooltipContent><p>Assist Mode</p></TooltipContent>
                         </Tooltip>
                     </div>
                      {isProcessingAudio && <p className="text-sm text-muted-foreground text-center">Syncing to your voice...</p>}
@@ -1026,12 +1084,42 @@ export default function Home() {
         </div>
       </div>
       <div className={cn("px-4 pb-4 w-full", isMaximized ? "hidden" : "block")}>
-        <Textarea
-          placeholder="Paste your script here..."
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          className="h-32 text-base resize-none w-full"
-        />
+        <div className="relative">
+          <Textarea
+            placeholder="Paste your script here..."
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            className="h-32 text-base resize-none w-full pr-12"
+            disabled={isAiEditing}
+          />
+          <div className="absolute bottom-2 right-2 flex items-center gap-1">
+              {isAiEditing ? (
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              ) : (
+                <TooltipProvider>
+                  <Tooltip>
+                    <DropdownMenu>
+                      <TooltipTrigger asChild>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-accent-foreground">
+                                <Sparkles className="h-5 w-5" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                      </TooltipTrigger>
+                      <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleAiAssist('fix')}>Fix Spelling & Grammar</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleAiAssist('rewrite')}>Rewrite</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleAiAssist('format')}>Format for Readability</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <TooltipContent side="top">
+                      <p>AI Script Assistant</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+          </div>
+        </div>
       </div>
        <GoogleDocPicker
         open={isPickerOpen}
