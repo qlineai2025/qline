@@ -208,11 +208,19 @@ export default function Home() {
     
     try {
       const audioDataUri = await blobToDataUri(audioBlob);
-      const { lastSpokenWordIndex } = await trackSpeechPosition({ audioDataUri, scriptText: text });
+      const { lastSpokenWordIndex, adjustedScrollSpeed } = await trackSpeechPosition({
+        audioDataUri,
+        scriptText: text,
+        currentScrollSpeed: scrollSpeedRef.current,
+      });
+      
+      if (adjustedScrollSpeed) {
+        setScrollSpeed(adjustedScrollSpeed);
+      }
       
       const targetWord = document.getElementById(`word-${lastSpokenWordIndex}`);
       if (targetWord) {
-        targetWord.scrollIntoView({ block: 'center' });
+        targetWord.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
 
     } catch (error: any) {
@@ -296,11 +304,9 @@ export default function Home() {
   }, []);
 
   const startScroll = useCallback(() => {
-    if (!isVoiceControlOn) {
-      lastTimeRef.current = null; // Reset timer
-      animationFrameRef.current = requestAnimationFrame(scrollAnimation);
-    }
-  }, [isVoiceControlOn, scrollAnimation]);
+    lastTimeRef.current = null;
+    animationFrameRef.current = requestAnimationFrame(scrollAnimation);
+  }, [scrollAnimation]);
 
   const stopScroll = useCallback(() => {
     if (animationFrameRef.current) {
@@ -310,13 +316,13 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (isPlaying && !isVoiceControlOn) {
+    if (isPlaying) {
       startScroll();
     } else {
       stopScroll();
     }
     return stopScroll;
-  }, [isPlaying, isVoiceControlOn, startScroll, stopScroll]);
+  }, [isPlaying, startScroll, stopScroll]);
 
 
   useEffect(() => {

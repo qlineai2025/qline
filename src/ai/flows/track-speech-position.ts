@@ -1,9 +1,9 @@
 'use server';
 
 /**
- * @fileOverview This file defines a Genkit flow to track the user's speech position within a script.
+ * @fileOverview This file defines a Genkit flow to track the user's speech position and pace within a script.
  *
- * - trackSpeechPosition - A function that identifies the last spoken word's index from an audio clip.
+ * - trackSpeechPosition - A function that identifies the last spoken word's index and adjusts scroll speed based on reading pace.
  * - TrackSpeechPositionInput - The input type for the trackSpeechPosition function.
  * - TrackSpeechPositionOutput - The return type for the trackSpeechPosition function.
  */
@@ -20,6 +20,9 @@ const TrackSpeechPositionInputSchema = z.object({
   scriptText: z
     .string()
     .describe('The full text of the script the user is reading.'),
+  currentScrollSpeed: z
+    .number()
+    .describe('The current scrolling speed of the teleprompter.'),
 });
 export type TrackSpeechPositionInput = z.infer<typeof TrackSpeechPositionInputSchema>;
 
@@ -27,6 +30,9 @@ const TrackSpeechPositionOutputSchema = z.object({
   lastSpokenWordIndex: z
     .number()
     .describe('The index of the last word in the script that was spoken in the audio.'),
+  adjustedScrollSpeed: z
+    .number()
+    .describe('The adjusted scrolling speed based on the user\'s reading pace.'),
 });
 export type TrackSpeechPositionOutput = z.infer<typeof TrackSpeechPositionOutputSchema>;
 
@@ -38,17 +44,20 @@ const prompt = ai.definePrompt({
   name: 'trackSpeechPositionPrompt',
   input: {schema: TrackSpeechPositionInputSchema},
   output: {schema: TrackSpeechPositionOutputSchema},
-  prompt: `You are an expert teleprompter controller. Your task is to analyze an audio clip of a user reading from a script and determine their exact position.
+  prompt: `You are an expert teleprompter controller. Your task is to analyze an audio clip of a user reading from a script and determine their exact position and reading pace.
 
   1. Transcribe the provided audio clip.
   2. Match the transcribed text to the full script text provided.
   3. Identify the index of the very last word from the script that was spoken in the audio. The script is zero-indexed based on words.
-  
-  Return only the index of that last word.
-  
+  4. Analyze the user's reading pace in the audio clip. Based on their pace and the current scroll speed, recommend an adjusted scroll speed. The speed should be a value that would make the teleprompter match their reading pace.
+
+  Return the word index and the adjusted scroll speed.
+
   Full Script:
   "{{{scriptText}}}"
-  
+
+  Current Scroll Speed: {{{currentScrollSpeed}}}
+
   Audio Clip:
   {{media url=audioDataUri}}`,
   config: {
