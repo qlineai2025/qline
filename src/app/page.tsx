@@ -98,6 +98,7 @@ export default function Home() {
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const lastTimeRef = useRef<number | null>;
 
   useEffect(() => { setSpeedInput(String(scrollSpeed)) }, [scrollSpeed]);
   useEffect(() => { setFontSizeInput(String(fontSize)) }, [fontSize]);
@@ -248,41 +249,47 @@ export default function Home() {
     audioChunksRef.current = [];
   }, []);
 
-  const scroll = useCallback(() => {
-    if (!isPlaying || !displayRef.current) return;
+  const scroll = useCallback((time: number) => {
+    if (!displayRef.current) return;
+
+    if (lastTimeRef.current === null) {
+      lastTimeRef.current = time;
+      animationFrameRef.current = requestAnimationFrame(scroll);
+      return;
+    }
+
+    const deltaTime = time - lastTimeRef.current;
+    lastTimeRef.current = time;
 
     const currentDisplay = displayRef.current;
-    if (currentDisplay.scrollHeight <= currentDisplay.clientHeight) return;
-
-    const pixelsPerSecond = scrollSpeed;
-    const scrollAmount = pixelsPerSecond / 60.0;
-
-    currentDisplay.scrollTop += scrollAmount;
+    if (currentDisplay.scrollHeight > currentDisplay.clientHeight) {
+      const pixelsPerSecond = scrollSpeed;
+      const scrollAmount = (pixelsPerSecond * deltaTime) / 1000;
+      currentDisplay.scrollTop += scrollAmount;
+    }
 
     if (currentDisplay.scrollTop + currentDisplay.clientHeight >= currentDisplay.scrollHeight - 1) {
       setIsPlaying(false);
+    } else {
+      animationFrameRef.current = requestAnimationFrame(scroll);
     }
-  }, [scrollSpeed, isPlaying]);
+  }, [scrollSpeed]);
 
   useEffect(() => {
-    const animate = () => {
-      if (isPlaying) {
-        scroll();
-        animationFrameRef.current = requestAnimationFrame(animate);
-      }
-    };
-
     if (isPlaying) {
-      animationFrameRef.current = requestAnimationFrame(animate);
+      lastTimeRef.current = null;
+      animationFrameRef.current = requestAnimationFrame(scroll);
     } else {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
     }
 
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
     };
   }, [isPlaying, scroll]);
@@ -605,14 +612,16 @@ export default function Home() {
                     isFlippedHorizontally && "scale-x-[-1]",
                     isFlippedVertically && "scale-y-[-1]"
                   )}
+                  style={{
+                    paddingLeft: `${horizontalMargin}%`,
+                    paddingRight: `${horizontalMargin}%`,
+                  }}
                 >
                   <div
                     className="w-full min-h-full flex justify-center items-center"
                      style={{
                       paddingTop: `${verticalMargin}%`,
                       paddingBottom: `${verticalMargin}%`,
-                      paddingLeft: `${horizontalMargin}%`,
-                      paddingRight: `${horizontalMargin}%`,
                     }}
                   >
                     <div
@@ -656,3 +665,5 @@ export default function Home() {
     </main>
   );
 }
+
+    
