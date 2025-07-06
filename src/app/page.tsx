@@ -392,8 +392,8 @@ export default function Home() {
   return (
     <main className="flex h-screen flex-col bg-background">
       <div className="grid flex-1 grid-cols-[auto_1fr] gap-4 p-4 min-h-0">
-        <div className="h-full overflow-y-auto pr-2">
-            <Card className="w-[140px]">
+        <div className="h-full overflow-y-auto">
+            <Card className="w-[240px]">
               <CardContent className="flex flex-col items-center gap-4 p-2">
                  <TooltipProvider>
                     <div className="flex flex-col items-center justify-center gap-2 w-full">
@@ -426,7 +426,7 @@ export default function Home() {
                       </Button>
                     </div>
 
-                    <div className="flex items-center justify-around pt-2 border-t w-full">
+                    <div className="flex items-center justify-center pt-2 border-t w-full">
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button variant="ghost" size="icon" onClick={() => setIsVoiceControlOn(!isVoiceControlOn)}>
@@ -434,30 +434,6 @@ export default function Home() {
                                 </Button>
                             </TooltipTrigger>
                             <TooltipContent><p>Voice Control</p></TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" onClick={() => setIsHighContrast(!isHighContrast)}>
-                                    <Contrast className={cn(isHighContrast && "text-accent")} />
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent><p>High Contrast</p></TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" onClick={() => setIsFlippedHorizontally(!isFlippedHorizontally)}>
-                                    <ArrowLeftRight className={cn(isFlippedHorizontally && "text-accent")} />
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent><p>Flip Horizontal</p></TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" onClick={() => setIsFlippedVertically(!isFlippedVertically)}>
-                                    <ArrowUpDown className={cn(isFlippedVertically && "text-accent")} />
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent><p>Flip Vertical</p></TooltipContent>
                         </Tooltip>
                     </div>
                      {isProcessingAudio && <p className="text-sm text-muted-foreground text-center">Syncing to your voice...</p>}
@@ -690,17 +666,52 @@ export default function Home() {
                 </div>
               </CardContent>
             </Card>
-             <Button
-                onClick={() => setIsMaximized(!isMaximized)}
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  "absolute bottom-4 right-4 z-10",
-                  isHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : ""
-                )}
-              >
-               {isMaximized ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
-             </Button>
+            <div className="absolute bottom-4 right-4 z-10 flex flex-col-reverse items-end gap-2">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => setIsMaximized(!isMaximized)}
+                      variant="ghost"
+                      size="icon"
+                      className={cn(
+                        isHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : ""
+                      )}
+                    >
+                    {isMaximized ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left"><p>{isMaximized ? 'Exit Full Screen' : 'Full Screen'}</p></TooltipContent>
+                </Tooltip>
+
+                 <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" onClick={() => setIsFlippedVertically(!isFlippedVertically)} className={cn(isHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : "")}>
+                            <ArrowUpDown className={cn(isFlippedVertically && "text-accent")} />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="left"><p>Flip Vertical</p></TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" onClick={() => setIsFlippedHorizontally(!isFlippedHorizontally)} className={cn(isHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : "")}>
+                            <ArrowLeftRight className={cn(isFlippedHorizontally && "text-accent")} />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="left"><p>Flip Horizontal</p></TooltipContent>
+                </Tooltip>
+                
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" onClick={() => setIsHighContrast(!isHighContrast)} className={cn(isHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : "")}>
+                            <Contrast className={cn(isHighContrast && "text-accent")} />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="left"><p>High Contrast</p></TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
           </div>
         </div>
       </div>
