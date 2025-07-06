@@ -445,7 +445,7 @@ export default function Home() {
     <main className="flex h-screen flex-col bg-background">
       <div className="grid flex-1 grid-cols-[auto_1fr] gap-4 p-4 min-h-0">
         <div className="h-full overflow-y-auto">
-            <Card className="w-[240px]">
+            <Card className="w-[280px]">
               <CardContent className="flex flex-col items-center gap-4 p-2">
                  <TooltipProvider>
                     <div className="flex flex-col items-center justify-center gap-2 w-full">
@@ -498,7 +498,9 @@ export default function Home() {
                     </div>
                      {isProcessingAudio && <p className="text-sm text-muted-foreground text-center">Syncing to your voice...</p>}
                      
-                    <div className="flex items-start justify-between pt-2 border-t w-full">
+                    <div className="flex flex-col w-full items-center gap-2 pt-2 border-t">
+                      <p className="text-sm font-medium text-muted-foreground">Prompter Settings</p>
+                      <div className="flex items-start justify-between w-full px-2">
                         <div className="flex flex-col items-center gap-3">
                           <Popover open={isSpeedPopoverOpen} onOpenChange={setIsSpeedPopoverOpen}>
                                <Tooltip>
@@ -644,6 +646,7 @@ export default function Home() {
                             className="h-24"
                           />
                         </div>
+                      </div>
                     </div>
 
                     {user && (
@@ -735,7 +738,7 @@ export default function Home() {
                       variant="ghost"
                       size="icon"
                       className={cn(
-                        "opacity-60",
+                        "opacity-60 shadow-lg",
                         isHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : ""
                       )}
                     >
@@ -751,7 +754,7 @@ export default function Home() {
                       variant="ghost"
                       size="icon"
                       className={cn(
-                        "opacity-60",
+                        "opacity-60 shadow-lg",
                         isHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : ""
                       )}
                     >
@@ -767,7 +770,7 @@ export default function Home() {
                       variant="ghost"
                       size="icon"
                       className={cn(
-                        "opacity-60",
+                        "opacity-60 shadow-lg",
                         isHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : ""
                       )}
                     >
@@ -783,7 +786,7 @@ export default function Home() {
                       variant="ghost"
                       size="icon"
                       className={cn(
-                        "opacity-60",
+                        "opacity-60 shadow-lg",
                         isHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : ""
                       )}
                     >
