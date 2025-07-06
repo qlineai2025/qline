@@ -9,7 +9,7 @@ This guide will walk you through all the features of the AutoScroll Teleprompter
 ### Getting Started
 
 *   **Pasting Your Script**: The primary way to get your text into the prompter is by using the **Script Editor** at the bottom of the screen. Simply click into the text area and paste or type your script. The prompter display will update in real-time.
-*   **Importing from Google**: You can sign in with your Google account to enable import options. Currently, you can import from Google Docs, with Slides and Sheets support coming soon.
+*   **Importing from Google**: You can sign in with your Google account to enable import options. Currently, you can import from Google Docs and Google Slides.
 
 ### Main Controls
 
@@ -27,14 +27,16 @@ Located in the top-left of the control panel:
 These icon-based buttons give you control over the teleprompter's functionality and appearance. Their color changes when active, and you can hover over them to see a tooltip explaining their function.
 
 #### Controls in the Side Panel
-*   **Voice Control (Mic Icon)**: When enabled (on by default), the app uses an advanced, AI-powered hybrid system for a seamless hands-free experience.
-    *   **Pace Matching**: It intelligently anticipates your reading speed, and the teleprompter scrolls continuously to match your pace.
-    *   **Position Tracking**: Every few seconds, it also pinpoints the exact word you're saying and gently re-centers the screen, ensuring you never lose your place.
-    This makes the prompter feel incredibly responsive and synchronized with your natural voice. When disabled, you must control scrolling manually with the speed slider.
+*   **Voice Control (Mic Icon)**: When enabled, the app uses an AI-powered system that listens for both verbal commands and your reading pace.
+    *   **Command Recognition**: You can control the prompter with your voice. The available commands are: "next slide", "previous slide", "go to slide [number]", "stop"/"pause", "start"/"play"/"go", and "rewind". The AI prioritizes commands over script reading.
+    *   **Pace Matching & Position Tracking**: If no command is detected, the AI falls back to its original behavior: it intelligently matches the scrolling speed to your reading pace and periodically re-centers the view on the last word you spoke.
+    *   **Automatic Slide Navigation**: When in "Notes View" for a presentation, the prompter will automatically advance to the next slide once you've finished reading all the notes for the current one.
 *   **Assist Mode (ScreenShare Icon)**: This button opens a clean, secondary prompter window. You can drag this window to a second monitor and make it full-screen. It stays perfectly in sync with the main window's text, settings, and scrolling.
+*   **Notes View (NotebookText Icon)**: When a Google Slides presentation is loaded, this button appears. It allows you to toggle the main prompter display between showing the full slide image and showing the speaker notes for that slide as scrollable text.
 
 #### Controls on the Prompter View
 These controls are overlaid on the bottom-right of the prompter display area. They have a subtle, semi-transparent style to ensure they are visible on any background.
+*   **Rewind (Rewind Icon)**: Instantly stops playback and scrolls the teleprompter content to the very top.
 *   **High Contrast (Contrast Icon)**: Toggles the display between standard mode (black text on a light background) and high-contrast mode (white text on a black background).
 *   **Flip Horizontal (ArrowLeftRight Icon)**: Mirrors the prompter text horizontally. This is essential for use with physical teleprompter hardware that uses a mirror.
 *   **Flip Vertical (ArrowUpDown Icon)**: Flips the prompter text vertically.
@@ -62,7 +64,7 @@ Directly within the "Prompter Settings" header, you can save, load, and manage y
     *   **Activate**: Click on a preset name to load its settings. The header title will update to show the name of the currently active preset.
     *   **Delete**: Hover over a preset and click the `Trash2` icon to delete it.
 *   **Saving Presets**: Click the `Save` icon in the header. A small popover will appear, allowing you to name your current settings. The name is editable inline, and you simply click the `Check` icon to save.
-*   **Resetting to Default**: Click the `RotateCcw` icon in the header to instantly reset all sliders to their default values.
+*   **Resetting to Default**: Click the `RotateCcw` icon in the header to instantly reset all sliders to their default values. The header will revert to "Prompter Settings".
 
 ### Script Editor
 
@@ -107,7 +109,7 @@ To allow for advanced user input without using disruptive modals:
 *   **Preset Management**: More complex popovers are used for saving and loading setting presets. The "Save" popover features an inline, headerless input for a seamless experience. The "Load" popover contains a list, a search field, and delete functionality, creating a mini-dashboard for managing presets.
 
 #### 3. Overlay Controls on Prompter Area
-To keep essential display controls accessible without cluttering the main panel, key toggles (`High Contrast`, `Flip`, `Full Screen`) are placed as overlay buttons on the bottom-right of the prompter itself.
+To keep essential display controls accessible without cluttering the main panel, key toggles (`Rewind`, `High Contrast`, `Flip`, `Full Screen`) are placed as overlay buttons on the bottom-right of the prompter itself.
 *   **Visibility**: These buttons have a semi-transparent style and their colors adapt to high-contrast mode, ensuring they are always visible but never distracting.
 *   **Grouping**: This logically groups view-manipulation controls with the view itself.
 
@@ -125,13 +127,13 @@ To provide a seamless and professional editing experience, AI assistance is not 
 The second-screen "Assist Mode" is architected for robust, real-time synchronization between the main control window and the secondary display window.
 *   **`localStorage` for Initial State**: When the presenter window first opens, it immediately reads all current settings (script text, font size, margins, etc.) from `localStorage`. This ensures it instantly mirrors the main app's state.
 *   **`BroadcastChannel` for Live Updates**: After initializing, a `BroadcastChannel` is established. This modern browser API creates a direct communication line between the two windows.
-*   **Event-Driven Sync**: Any action in the main window—playing/pausing, changing settings, editing the script, or most importantly, a new scroll position from voice control—posts a message to the channel. The presenter window listens for these messages and updates its display instantly.
+*   **Event-Driven Sync**: Any action in the main window—playing/pausing, changing settings, editing the script, or a new scroll position from voice control—posts a message to the channel. The presenter window listens for these messages and updates its display instantly.
 
 #### 7. AI-Powered Voice Control
-The voice control feature is a hybrid system designed for maximum responsiveness.
-*   **Continuous Scrolling**: The app maintains a constant, smooth scroll based on a target speed.
-*   **AI-Powered Corrections**: Every two seconds, an audio snippet of the user's voice is sent to a Genkit AI flow (`trackSpeechPosition`). This flow returns both an `adjustedScrollSpeed` based on reading pace and the `lastSpokenWordIndex`.
-*   **Seamless Updates**: The application uses the `adjustedScrollSpeed` to update the continuous scrolling animation, and simultaneously performs a smooth `scrollIntoView` to re-center the prompter on the `lastSpokenWordIndex`. This dual-correction approach ensures the teleprompter is always in sync with the speaker.
+The voice control feature is an advanced AI system that interprets user speech for one of two purposes: command execution or pace tracking.
+*   **Command-First Architecture**: The application sends audio snippets to a Genkit AI flow (`controlTeleprompter`). This flow is prompted to first check for specific verbal commands (e.g., "next slide", "pause"). Commands are given top priority.
+*   **Fallback to Pace Tracking**: If the AI determines the user is not giving a command, it treats the audio as script reading. It then performs the pace-tracking function: it returns both an `adjustedScrollSpeed` based on the user's reading pace and the `lastSpokenWordIndex` to keep the prompter perfectly synchronized.
+*   **State-Aware Logic**: The flow is also sent the current state of the prompter (e.g., `isPlaying`, `prompterMode`, `currentSlideIndex`), allowing it to make intelligent decisions based on context. For example, "next slide" only has an effect if `prompterMode` is 'slides'.
 
 #### 8. Smooth, Time-Based Scrolling Animation
 To ensure a fluid teleprompter experience, the scrolling is driven by a custom animation loop.
