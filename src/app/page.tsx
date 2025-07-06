@@ -1046,7 +1046,7 @@ export default function Home() {
                       variant="ghost"
                       size="icon"
                       className={cn(
-                        "opacity-60 shadow-lg",
+                        "opacity-60",
                         isHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : ""
                       )}
                     >
@@ -1062,7 +1062,7 @@ export default function Home() {
                       variant="ghost"
                       size="icon"
                       className={cn(
-                        "opacity-60 shadow-lg",
+                        "opacity-60",
                         isHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : ""
                       )}
                     >
@@ -1078,7 +1078,7 @@ export default function Home() {
                       variant="ghost"
                       size="icon"
                       className={cn(
-                        "opacity-60 shadow-lg",
+                        "opacity-60",
                         isHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : ""
                       )}
                     >
@@ -1094,7 +1094,7 @@ export default function Home() {
                       variant="ghost"
                       size="icon"
                       className={cn(
-                        "opacity-60 shadow-lg",
+                        "opacity-60",
                         isHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : ""
                       )}
                     >
@@ -1136,7 +1136,7 @@ export default function Home() {
               onContextMenu={handleContextMenu}
               className={cn(
                 'w-full resize-none rounded-none border-0 bg-transparent text-base transition-all duration-300 ease-in-out focus-visible:ring-0',
-                isEditorExpanded ? 'h-64' : 'h-32'
+                isEditorExpanded ? 'h-96' : 'h-32'
               )}
               disabled={isAiEditing}
             />
@@ -1184,4 +1184,3 @@ export default function Home() {
     </main>
   );
 }
-
