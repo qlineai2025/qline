@@ -282,12 +282,12 @@ export default function Home() {
     <main
       className={cn(
         "min-h-screen bg-background transition-all duration-300",
-        isMaximized ? "p-0" : "p-4 sm:p-6 md:p-8"
+        isMaximized ? "p-0" : "p-4"
       )}
     >
       <div
         className={cn(
-          "grid gap-8 max-w-screen-2xl mx-auto",
+          "grid gap-4 max-w-screen-2xl mx-auto",
           isMaximized ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-3"
         )}
       >
@@ -300,7 +300,7 @@ export default function Home() {
                   Controls & Settings
                 </CardTitle>
               </CardHeader>
-              <CardContent className="flex flex-col gap-6">
+              <CardContent className="flex flex-col gap-4">
                 <div className="flex items-center justify-center gap-4">
                   {loading ? (
                     <Skeleton className="h-10 w-full" />
@@ -458,7 +458,7 @@ export default function Home() {
 
         <div
           className={cn(
-            "lg:col-span-2 flex flex-col gap-8",
+            "lg:col-span-2 flex flex-col gap-4",
             isMaximized ? "col-span-1 lg:col-span-3 h-screen" : "h-[85vh]"
           )}
         >
@@ -499,7 +499,15 @@ export default function Home() {
                 </div>
               </CardContent>
             </Card>
-             <Button onClick={() => setIsMaximized(!isMaximized)} variant="outline" size="icon" className="absolute bottom-4 right-4 z-10">
+             <Button 
+                onClick={() => setIsMaximized(!isMaximized)} 
+                variant={isHighContrast ? 'ghost' : 'outline'}
+                size="icon" 
+                className={cn(
+                  "absolute bottom-4 right-4 z-10",
+                  isHighContrast && "bg-white text-black hover:bg-white/80"
+                )}
+              >
                {isMaximized ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
              </Button>
           </div>
