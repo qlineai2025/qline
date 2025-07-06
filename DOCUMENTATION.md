@@ -31,29 +31,49 @@ These icon-based buttons give you control over the teleprompter's functionality 
     *   **Pace Matching**: It intelligently anticipates your reading speed, and the teleprompter scrolls continuously to match your pace.
     *   **Position Tracking**: Every few seconds, it also pinpoints the exact word you're saying and gently re-centers the screen, ensuring you never lose your place.
     This makes the prompter feel incredibly responsive and synchronized with your natural voice. When disabled, you must control scrolling manually with the speed slider.
-*   **Presenter Mode (ScreenShare Icon)**: This button opens a clean, secondary prompter window. You can drag this window to a second monitor and make it full-screen. It stays perfectly in sync with the main window's text, settings, and scrolling.
+*   **Assist Mode (ScreenShare Icon)**: This button opens a clean, secondary prompter window. You can drag this window to a second monitor and make it full-screen. It stays perfectly in sync with the main window's text, settings, and scrolling.
 
 #### Controls on the Prompter View
-These controls are overlaid on the bottom-right of the prompter display area. They have a subtle shadow effect to ensure they are visible on any background.
+These controls are overlaid on the bottom-right of the prompter display area. They have a subtle, semi-transparent style to ensure they are visible on any background.
 *   **High Contrast (Contrast Icon)**: Toggles the display between standard mode (black text on a light background) and high-contrast mode (white text on a black background).
 *   **Flip Horizontal (ArrowLeftRight Icon)**: Mirrors the prompter text horizontally. This is essential for use with physical teleprompter hardware that uses a mirror.
 *   **Flip Vertical (ArrowUpDown Icon)**: Flips the prompter text vertically.
 *   **Full Screen (Maximize/Minimize Icon)**: Manually toggles the full-screen view. Note that pressing "Play" also automatically enters full-screen. Pressing the 'Escape' key will exit full-screen mode.
 
-### Fine-Tuning Controls (Vertical Sliders)
+### Fine-Tuning Controls (Sliders & Presets)
 
-The control panel features four vertical sliders for precise adjustments.
+The control panel features four vertical sliders for precise adjustments, as well as a powerful preset management system.
 
+#### Adjusting Settings with Sliders
 *   **How to Use**:
     *   **Drag the slider handle** for quick, visual adjustments.
     *   **Hover over the icon** above the slider to see the current value in a tooltip.
     *   **Click the icon** to open a popover where you can type a precise numeric value. Press 'Enter' or click outside the popover to save.
-
 *   **Controls**:
     *   **Scroll Speed (Gauge Icon)**: Sets the manual scrolling speed. This slider is disabled when Voice Control is active.
     *   **Font Size (TextIcon)**: Increases or decreases the size of the prompter text.
-    *   **Horizontal Margin (StretchHorizontal Icon)**: Adjusts the empty space on the left and right sides of the text, making the text column narrower or wider.
+    *   **Horizontal Margin (StretchHorizontal Icon)**: Adjusts the empty space on the left and right sides of the text.
     *   **Vertical Margin (StretchVertical Icon)**: Adjusts the empty space at the top and bottom of the prompter area.
+
+#### Managing Setting Presets
+Directly within the "Prompter Settings" header, you can save, load, and manage your slider configurations.
+*   **Loading Presets**: Click the header title (e.g., "Prompter Settings") to open a popover listing all your saved presets.
+    *   **Search**: The popover has an auto-focused search bar, so you can immediately start typing to filter your presets.
+    *   **Activate**: Click on a preset name to load its settings. The header title will update to show the name of the currently active preset.
+    *   **Delete**: Hover over a preset and click the `Trash2` icon to delete it.
+*   **Saving Presets**: Click the `Save` icon in the header. A small popover will appear, allowing you to name your current settings. The name is editable inline, and you simply click the `Check` icon to save.
+*   **Resetting to Default**: Click the `RotateCcw` icon in the header to instantly reset all sliders to their default values.
+
+### Script Editor
+
+The script editor is located at the bottom of the page and includes several powerful features to help you prepare your text.
+
+*   **Expand/Collapse Editor (ChevronsUpDown Icon)**: Click this icon in the top-right corner to toggle the editor's height, giving you more space to write when you need it.
+*   **One-Click AI Cleanup (Wand2 Icon)**: Click this "magic wand" icon to have the AI automatically clean up your entire script. It removes timecode stamps (from SRT/VTT files), formats paragraphs, and converts speaker names to ALL CAPS for a professional, teleprompter-ready format.
+*   **Contextual AI Editing**: For more targeted changes, highlight a portion of your script and **right-click**. A context menu will appear at your cursor, allowing you to:
+    *   Fix Spelling & Grammar
+    *   Rewrite the selection for clarity and impact
+    *   Format the selection for better readability
 
 ### User Profile
 
@@ -77,51 +97,43 @@ The application is designed around a **compact, efficient, and intuitive layout*
 
 #### 1. Compact, Icon-Driven Control Panel
 The left-hand control panel is designed to be clear and unobtrusive.
-*   **Icons as Controls**: Toggles and slider identifiers are represented by icons. This saves space and creates a clean, modern aesthetic.
-*   **Tooltips for Clarity**: To ensure usability, all icon-only buttons are wrapped in a `<Tooltip>`. Hovering over an icon reveals its function and, for sliders, its current value.
-*   **Vertical Sliders**: Sliders are oriented vertically to fit the panel. This is achieved by applying `orientation="vertical"` to the component and ensuring the component's CSS supports it.
+*   **Icons as Controls**: Toggles and identifiers are represented by icons. This saves space and creates a clean, modern aesthetic. The preset management system (Load, Save, Reset) is also integrated directly into the settings header using icons.
+*   **Tooltips for Clarity**: To ensure usability, all icon-only buttons are wrapped in a `<Tooltip>`. Hovering over an icon reveals its function.
+*   **Vertical Sliders**: Sliders are oriented vertically to fit the panel.
 
-#### 2. Popovers for Precise Input
-To allow users to input exact numeric values for sliders without using a disruptive modal:
-*   **Trigger**: Clicking the icon associated with a slider.
-*   **Component**: A lightweight `<Popover>` is used instead of a `<Dialog>`.
-*   **Interaction**: The popover appears next to the icon, containing a single number input. It has no header or buttons.
-*   **Behavior**: The popover is dismissed and the value is saved when the user presses 'Enter' or clicks anywhere outside the popover's bounds. This creates a seamless and low-friction editing experience.
+#### 2. Popovers for Precise & Complex Input
+To allow for advanced user input without using disruptive modals:
+*   **Precise Value Input**: Clicking a slider's icon opens a lightweight `<Popover>` to type an exact number.
+*   **Preset Management**: More complex popovers are used for saving and loading setting presets. The "Save" popover features an inline, headerless input for a seamless experience. The "Load" popover contains a list, a search field, and delete functionality, creating a mini-dashboard for managing presets.
 
 #### 3. Overlay Controls on Prompter Area
 To keep essential display controls accessible without cluttering the main panel, key toggles (`High Contrast`, `Flip`, `Full Screen`) are placed as overlay buttons on the bottom-right of the prompter itself.
-*   **Visibility**: These buttons have a semi-transparent style with a subtle shadow effect. Their colors adapt to high-contrast mode, ensuring they are always visible but never distracting.
-*   **Grouping**: This logically groups view-manipulation controls with the view itself, creating an intuitive user experience.
+*   **Visibility**: These buttons have a semi-transparent style and their colors adapt to high-contrast mode, ensuring they are always visible but never distracting.
+*   **Grouping**: This logically groups view-manipulation controls with the view itself.
 
-#### 4. Centered & Responsive Prompter Area
-The main prompter display is engineered to be robust and flexible.
-*   **True Centering**: The text content is always centered horizontally and vertically within the bounds defined by the margin sliders. This is achieved using a flexbox container (`flex items-center justify-center`).
-*   **Dynamic Margins**: The horizontal and vertical margin sliders dynamically adjust the `padding` of the container, effectively controlling the size of the text area while maintaining centering.
-*   **Seamless Full-Screen**: In full-screen mode, the prompter area expands to fill the entire viewport, and its borders/rounding are removed for a completely immersive view.
+#### 4. Minimalist & Functional Script Editor
+The script editor is designed to be powerful yet unobtrusive.
+*   **Icon-Driven Header**: Instead of a static text header, the editor uses icon controls in the top-right corner for `Expand/Collapse` and `AI Cleanup`. This maximizes vertical space and keeps the interface clean.
+*   **Collapsible Height**: The editor's height can be toggled, allowing it to be compact by default but expandable for serious editing sessions.
 
-#### 5. Minimalist Script Editor
-The script editor at the bottom of the screen is intentionally minimalist.
-*   **Headerless Design**: The `<CardHeader>` and `<CardTitle>` have been removed to maximize the vertical space available for the `<Textarea>`.
-*   **Full-Width Layout**: It spans the entire width of the application window, providing an ample and comfortable area for script editing.
-*   **Clean Integration**: By removing the outer `<Card>` border and background, the `<Textarea>` component integrates directly into the main application background, feeling less like a separate widget and more like a core part of the layout.
+#### 5. Contextual AI Editing
+To provide a seamless and professional editing experience, AI assistance is not triggered by persistent on-screen buttons. Instead, it's integrated via a **contextual right-click menu**.
+*   **Interaction**: This pattern feels native to modern text editors. The menu appears directly at the user's point of focus.
+*   **Intelligent Flow**: The `assistWithScript` AI flow is designed to handle both full-script and partial-script modifications. When operating on a selection, it uses the surrounding text for context but intelligently returns only the modified portion, which is then swapped into the original text.
 
-#### 6. Smooth, Time-Based Scrolling Animation
-To ensure a fluid and professional teleprompter experience, the scrolling is driven by a custom animation loop.
-*   **`requestAnimationFrame`**: The application uses `requestAnimationFrame` for all scrolling animations. This is a browser API specifically designed for creating smooth, efficient animations that are synchronized with the display's refresh rate, which prevents stuttering and tearing.
-*   **Time-Based Calculation**: The scroll speed is not based on fixed pixel increments per frame. Instead, it is calculated based on the actual time elapsed between frames (`deltaTime`). This ensures that the scrolling speed remains consistent and accurate, regardless of the device's performance or screen refresh rate.
-*   **Independent of CSS**: The animation logic is handled entirely in JavaScript, avoiding conflicts with CSS properties like `scroll-behavior: smooth`. This gives us precise programmatic control over the scrolling, allowing for real-time speed adjustments from the slider without any visual glitches.
+#### 6. Real-Time Presenter Mode Sync
+The second-screen "Assist Mode" is architected for robust, real-time synchronization between the main control window and the secondary display window.
+*   **`localStorage` for Initial State**: When the presenter window first opens, it immediately reads all current settings (script text, font size, margins, etc.) from `localStorage`. This ensures it instantly mirrors the main app's state.
+*   **`BroadcastChannel` for Live Updates**: After initializing, a `BroadcastChannel` is established. This modern browser API creates a direct communication line between the two windows.
+*   **Event-Driven Sync**: Any action in the main window—playing/pausing, changing settings, editing the script, or most importantly, a new scroll position from voice control—posts a message to the channel. The presenter window listens for these messages and updates its display instantly.
 
 #### 7. AI-Powered Voice Control
 The voice control feature is a hybrid system designed for maximum responsiveness.
 *   **Continuous Scrolling**: The app maintains a constant, smooth scroll based on a target speed.
-*   **AI-Powered Corrections**: Every two seconds, an audio snippet of the user's voice is sent to a Genkit AI flow (`trackSpeechPosition`).
-*   **Dual Output**: This AI flow returns two key pieces of information:
-    1.  `adjustedScrollSpeed`: An updated scroll speed based on the user's current reading pace.
-    2.  `lastSpokenWordIndex`: The precise index of the last word spoken in the script.
-*   **Seamless Updates**: The application uses the `adjustedScrollSpeed` to update the continuous scrolling animation, and simultaneously performs a smooth `scrollIntoView` to re-center the prompter on the `lastSpokenWordIndex`. This dual-correction approach ensures the teleprompter is always in sync with the speaker in both speed and position.
+*   **AI-Powered Corrections**: Every two seconds, an audio snippet of the user's voice is sent to a Genkit AI flow (`trackSpeechPosition`). This flow returns both an `adjustedScrollSpeed` based on reading pace and the `lastSpokenWordIndex`.
+*   **Seamless Updates**: The application uses the `adjustedScrollSpeed` to update the continuous scrolling animation, and simultaneously performs a smooth `scrollIntoView` to re-center the prompter on the `lastSpokenWordIndex`. This dual-correction approach ensures the teleprompter is always in sync with the speaker.
 
-#### 8. Real-Time Presenter Mode Sync
-The second-screen "Presenter Mode" is architected for robust, real-time synchronization between the main control window and the secondary display window.
-*   **`localStorage` for Initial State**: When the presenter window first opens, it immediately reads all current settings (script text, font size, margins, etc.) from `localStorage`. This ensures it isn't a blank screen and instantly mirrors the main app's state.
-*   **`BroadcastChannel` for Live Updates**: After initializing, a `BroadcastChannel` is established. This modern browser API creates a direct communication line between the two windows.
-*   **Event-Driven Sync**: Any action in the main window—playing/pausing, changing settings, editing the script, or most importantly, a new scroll position from voice control—posts a message to the channel. The presenter window listens for these messages and updates its display instantly, guaranteeing a perfect, real-time mirror of the main prompter.
+#### 8. Smooth, Time-Based Scrolling Animation
+To ensure a fluid teleprompter experience, the scrolling is driven by a custom animation loop.
+*   **`requestAnimationFrame`**: This browser API synchronizes animations with the display's refresh rate, preventing stuttering.
+*   **Time-Based Calculation**: The scroll speed is calculated based on the actual time elapsed between frames (`deltaTime`). This ensures that the scrolling speed remains consistent regardless of device performance.
