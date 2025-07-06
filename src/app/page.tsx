@@ -97,8 +97,12 @@ export default function Home() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const scrollSpeedRef = useRef<number>(scrollSpeed);
+  scrollSpeedRef.current = scrollSpeed;
+
   const animationFrameRef = useRef<number | null>(null);
-  const lastTimeRef = useRef<number | null>;
+  const lastTimeRef = useRef<number | null>(null);
 
   useEffect(() => { setSpeedInput(String(scrollSpeed)) }, [scrollSpeed]);
   useEffect(() => { setFontSizeInput(String(fontSize)) }, [fontSize]);
@@ -263,7 +267,7 @@ export default function Home() {
 
     const currentDisplay = displayRef.current;
     if (currentDisplay.scrollHeight > currentDisplay.clientHeight) {
-      const pixelsPerSecond = scrollSpeed;
+      const pixelsPerSecond = scrollSpeedRef.current;
       const scrollAmount = (pixelsPerSecond * deltaTime) / 1000;
       currentDisplay.scrollTop += scrollAmount;
     }
@@ -273,7 +277,7 @@ export default function Home() {
     } else {
       animationFrameRef.current = requestAnimationFrame(scroll);
     }
-  }, [scrollSpeed]);
+  }, []);
 
   useEffect(() => {
     if (isPlaying) {
@@ -665,5 +669,3 @@ export default function Home() {
     </main>
   );
 }
-
-    
