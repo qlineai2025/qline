@@ -497,33 +497,6 @@ export default function Home() {
                         </Tooltip>
                     </div>
                      {isProcessingAudio && <p className="text-sm text-muted-foreground text-center">Syncing to your voice...</p>}
-
-                    <div className="grid grid-cols-2 gap-4 pt-2 border-t w-full">
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" onClick={() => setIsHighContrast(!isHighContrast)}>
-                                    <Contrast className={cn(isHighContrast && "text-accent")} />
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent><p>High Contrast</p></TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" onClick={() => setIsFlippedHorizontally(!isFlippedHorizontally)}>
-                                    <ArrowLeftRight className={cn(isFlippedHorizontally && "text-accent")} />
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent><p>Flip Horizontal</p></TooltipContent>
-                        </Tooltip>
-                         <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" onClick={() => setIsFlippedVertically(!isFlippedVertically)}>
-                                    <ArrowUpDown className={cn(isFlippedVertically && "text-accent")} />
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent><p>Flip Vertical</p></TooltipContent>
-                        </Tooltip>
-                    </div>
                      
                     <div className="flex items-start justify-between pt-2 border-t w-full">
                         <div className="flex flex-col items-center gap-3">
@@ -753,8 +726,56 @@ export default function Home() {
                 </div>
               </CardContent>
             </Card>
-            <div className="absolute bottom-4 right-4 z-10">
+            <div className="absolute bottom-4 right-4 z-10 flex flex-col items-end gap-2">
               <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => setIsHighContrast(!isHighContrast)}
+                      variant="ghost"
+                      size="icon"
+                      className={cn(
+                        "opacity-60",
+                        isHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : ""
+                      )}
+                    >
+                      <Contrast className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left"><p>High Contrast</p></TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => setIsFlippedHorizontally(!isFlippedHorizontally)}
+                      variant="ghost"
+                      size="icon"
+                      className={cn(
+                        "opacity-60",
+                        isHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : ""
+                      )}
+                    >
+                      <ArrowLeftRight className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left"><p>Flip Horizontal</p></TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => setIsFlippedVertically(!isFlippedVertically)}
+                      variant="ghost"
+                      size="icon"
+                      className={cn(
+                        "opacity-60",
+                        isHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : ""
+                      )}
+                    >
+                      <ArrowUpDown className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left"><p>Flip Vertical</p></TooltipContent>
+                </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
