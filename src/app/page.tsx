@@ -10,7 +10,7 @@ import { auth, googleProvider } from "@/lib/firebase";
 import { signInWithPopup, signOut } from "firebase/auth";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
@@ -601,21 +601,21 @@ export default function Home() {
                 <div
                   ref={displayRef}
                   className={cn(
-                    "h-full overflow-y-auto scroll-smooth flex justify-center items-center",
+                    "h-full overflow-y-auto scroll-smooth",
                     isHighContrast && "bg-black",
                     isFlippedHorizontally && "scale-x-[-1]",
                     isFlippedVertically && "scale-y-[-1]"
                   )}
                 >
                   <div
-                    className="w-full flex"
+                    className="w-full min-h-full flex justify-center items-center"
                      style={{
                       padding: `${verticalMargin}% ${horizontalMargin}%`,
                     }}
                   >
                     <div
                       className={cn(
-                        "whitespace-pre-wrap break-words m-auto",
+                        "whitespace-pre-wrap break-words",
                         isHighContrast ? "text-white" : "text-foreground"
                       )}
                       style={{
