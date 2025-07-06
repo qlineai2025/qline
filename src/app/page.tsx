@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -58,7 +59,8 @@ export default function Home() {
   const [text, setText] = useState<string>(DEFAULT_TEXT);
   const [scrollSpeed, setScrollSpeed] = useState<number>(20);
   const [fontSize, setFontSize] = useState<number>(64);
-  const [margin, setMargin] = useState<number>(10);
+  const [horizontalMargin, setHorizontalMargin] = useState<number>(10);
+  const [verticalMargin, setVerticalMargin] = useState<number>(4);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [isVoiceControlOn, setIsVoiceControlOn] = useState<boolean>(false);
   const [isProcessingAudio, setIsProcessingAudio] = useState<boolean>(false);
@@ -424,14 +426,25 @@ export default function Home() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="margin">Margin: {margin}%</Label>
+                  <Label htmlFor="horizontal-margin">Horizontal Margin: {horizontalMargin}%</Label>
                   <Slider
-                    id="margin"
+                    id="horizontal-margin"
                     min={0}
                     max={40}
                     step={1}
-                    value={[margin]}
-                    onValueChange={(value) => setMargin(value[0])}
+                    value={[horizontalMargin]}
+                    onValueChange={(value) => setHorizontalMargin(value[0])}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="vertical-margin">Vertical Margin: {verticalMargin}%</Label>
+                  <Slider
+                    id="vertical-margin"
+                    min={0}
+                    max={40}
+                    step={1}
+                    value={[verticalMargin]}
+                    onValueChange={(value) => setVerticalMargin(value[0])}
                   />
                 </div>
               </div>
@@ -482,8 +495,10 @@ export default function Home() {
                   isFlippedVertically && "scale-y-[-1]"
                 )}
                 style={{
-                  paddingLeft: `${margin}%`,
-                  paddingRight: `${margin}%`,
+                  paddingLeft: `${horizontalMargin}%`,
+                  paddingRight: `${horizontalMargin}%`,
+                  paddingTop: `${verticalMargin}%`,
+                  paddingBottom: `${verticalMargin}%`,
                 }}
               >
                 <div
@@ -506,3 +521,5 @@ export default function Home() {
     </main>
   );
 }
+
+    
