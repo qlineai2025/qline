@@ -28,7 +28,6 @@ import {
   Mic,
   MicOff,
   Settings,
-  FileText,
   Maximize,
   Minimize,
   Contrast,
@@ -62,7 +61,7 @@ export default function Home() {
   const [horizontalMargin, setHorizontalMargin] = useState<number>(10);
   const [verticalMargin, setVerticalMargin] = useState<number>(4);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
-  const [isVoiceControlOn, setIsVoiceControlOn] = useState<boolean>(false);
+  const [isVoiceControlOn, setIsVoiceControlOn] = useState<boolean>(true);
   const [isProcessingAudio, setIsProcessingAudio] = useState<boolean>(false);
   const [isHighContrast, setIsHighContrast] = useState<boolean>(true);
   const [isMaximized, setIsMaximized] = useState<boolean>(false);
@@ -272,6 +271,13 @@ export default function Home() {
     };
   }, [isMaximized]);
 
+  const handlePlayPause = () => {
+    if (!isPlaying) {
+      setIsMaximized(true);
+    }
+    setIsPlaying(!isPlaying);
+  };
+
   return (
     <main
       className={cn(
@@ -319,12 +325,9 @@ export default function Home() {
                     </Button>
                   )}
                   
-                  <Button onClick={() => setIsPlaying(!isPlaying)} className="w-full">
+                  <Button onClick={handlePlayPause} className="w-full">
                     {isPlaying ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
                     {isPlaying ? "Pause" : "Play"}
-                  </Button>
-                  <Button onClick={() => setIsMaximized(!isMaximized)} variant="outline" size="icon" className="shrink-0">
-                    {isMaximized ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
                   </Button>
                 </div>
 
@@ -459,7 +462,7 @@ export default function Home() {
             isMaximized ? "col-span-1 lg:col-span-3 h-screen" : "h-[85vh]"
           )}
         >
-          <div className="flex-1 min-h-0">
+          <div className="flex-1 min-h-0 relative">
             <Card
               className={cn(
                 "h-full flex flex-col",
@@ -496,24 +499,17 @@ export default function Home() {
                 </div>
               </CardContent>
             </Card>
+             <Button onClick={() => setIsMaximized(!isMaximized)} variant="outline" size="icon" className="absolute bottom-4 right-4 z-10">
+               {isMaximized ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+             </Button>
           </div>
           <div className={cn(isMaximized ? "hidden" : "block")}>
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="text-primary"/>
-                  Script Editor
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Textarea
-                  placeholder="Paste your script here..."
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  className="h-64 text-base resize-none"
-                />
-              </CardContent>
-            </Card>
+            <Textarea
+              placeholder="Paste your script here..."
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              className="h-64 text-base resize-none"
+            />
           </div>
         </div>
       </div>
