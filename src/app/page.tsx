@@ -3,7 +3,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { trackSpeechPosition } from "@/ai/flows/track-speech-position";
-import { assistWithScript } from "@/ai/flows/script-assistant-flow.ts";
+import { assistWithScript, ScriptAssistantCommand } from "@/ai/flows/script-assistant-flow.ts";
 import { cn } from "@/lib/utils";
 
 import { useAuth } from "@/components/auth-provider";
@@ -68,6 +68,8 @@ import { GoogleDocPicker } from "@/components/google-doc-picker";
 const DEFAULT_TEXT = `Welcome to AutoScroll Teleprompter.
 
 You can start by pasting your script here.
+
+Right-click on selected text to get AI assistance.
 
 Press the play button to start scrolling. The app will automatically enter full-screen mode.
 
@@ -134,6 +136,8 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState('');
   const [loadedSettingName, setLoadedSettingName] = useState<string | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; selectionStart: number; selectionEnd: number; } | null>(null);
 
   const displayRef = useRef<HTMLDivElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -181,21 +185,6 @@ export default function Home() {
       setTimeout(() => searchInputRef.current?.focus(), 100);
     }
   }, [isLoadPopoverOpen]);
-
-  // Sync loaded setting name with current settings
-  useEffect(() => {
-    const currentSettings = { scrollSpeed, fontSize, horizontalMargin, verticalMargin };
-    const matchingSetting = savedSettings.find(s =>
-        s.scrollSpeed === scrollSpeed &&
-        s.fontSize === fontSize &&
-        s.horizontalMargin === horizontalMargin &&
-        s.verticalMargin === verticalMargin
-    );
-
-    setLoadedSettingName(matchingSetting ? matchingSetting.name : null);
-
-  }, [scrollSpeed, fontSize, horizontalMargin, verticalMargin, savedSettings]);
-
 
   // Initialize broadcast channel for presenter mode
   useEffect(() => {
@@ -502,6 +491,7 @@ export default function Home() {
         if(isFontSizePopoverOpen) setIsFontSizePopoverOpen(false);
         if(isHorizontalMarginPopoverOpen) setIsHorizontalMarginPopoverOpen(false);
         if(isVerticalMarginPopoverOpen) setIsVerticalMarginPopoverOpen(false);
+        if (contextMenu) setContextMenu(null);
       }
     };
 
@@ -510,7 +500,7 @@ export default function Home() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isMaximized, isSpeedPopoverOpen, isFontSizePopoverOpen, isHorizontalMarginPopoverOpen, isVerticalMarginPopoverOpen]);
+  }, [isMaximized, isSpeedPopoverOpen, isFontSizePopoverOpen, isHorizontalMarginPopoverOpen, isVerticalMarginPopoverOpen, contextMenu]);
 
   const handlePlayPause = () => {
     const newIsPlaying = !isPlaying;
@@ -551,6 +541,7 @@ export default function Home() {
     setFontSize(DEFAULT_SETTINGS.fontSize);
     setHorizontalMargin(DEFAULT_SETTINGS.horizontalMargin);
     setVerticalMargin(DEFAULT_SETTINGS.verticalMargin);
+    setLoadedSettingName(null);
     toast({ title: "Settings Reset", description: "All settings have been reset to their default values." });
   };
 
@@ -578,6 +569,7 @@ export default function Home() {
     setFontSize(setting.fontSize);
     setHorizontalMargin(setting.horizontalMargin);
     setVerticalMargin(setting.verticalMargin);
+    setLoadedSettingName(setting.name);
     setIsLoadPopoverOpen(false);
     toast({ title: "Settings Loaded", description: `Applied settings from "${setting.name}".` });
   };
@@ -587,22 +579,31 @@ export default function Home() {
     toast({ title: "Setting Deleted", description: "The preset has been removed." });
   };
   
-  const handleAiAssist = async (command: 'fix' | 'rewrite' | 'format') => {
-    if (!text.trim()) {
+  const handleAiAssist = async (command: ScriptAssistantCommand) => {
+    if (!contextMenu) return;
+
+    const { selectionStart, selectionEnd } = contextMenu;
+    const selectedText = text.substring(selectionStart, selectionEnd);
+
+    if (!selectedText) {
         toast({
             variant: "destructive",
-            title: "Empty Script",
-            description: "There's no text to edit. Please paste your script first.",
+            title: "Empty Selection",
+            description: "Please select some text to modify.",
         });
         return;
     }
+    
+    setContextMenu(null);
     setIsAiEditing(true);
+
     try {
-        const modifiedText = await assistWithScript({ scriptText: text, command });
-        setText(modifiedText);
+        const modifiedSelection = await assistWithScript({ scriptText: text, command, selectedText });
+        const newText = text.substring(0, selectionStart) + modifiedSelection + text.substring(selectionEnd);
+        setText(newText);
         toast({
             title: "Script Updated",
-            description: `Your script has been ${command === 'fix' ? 'fixed' : command} by AI.`,
+            description: `Your selection has been updated by AI.`,
         });
     } catch (error: any) {
         console.error("AI script assistance error:", error);
@@ -619,9 +620,25 @@ export default function Home() {
   const filteredSettings = savedSettings.filter(s =>
     s.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  
+  const handleContextMenu = (e: React.MouseEvent<HTMLTextAreaElement>) => {
+    const textarea = e.currentTarget;
+    const selectionStart = textarea.selectionStart;
+    const selectionEnd = textarea.selectionEnd;
+
+    if (selectionStart !== selectionEnd) {
+      e.preventDefault();
+      setContextMenu({
+        x: e.clientX,
+        y: e.clientY,
+        selectionStart,
+        selectionEnd,
+      });
+    }
+  };
 
   return (
-    <main className="flex h-screen flex-col bg-background">
+    <main className="flex h-screen flex-col bg-background" onClickCapture={() => { if (contextMenu) setContextMenu(null)}}>
       <div className="grid flex-1 grid-cols-[auto_1fr] gap-4 p-4 min-h-0">
         <div className="h-full overflow-y-auto">
             <Card className="w-[280px]">
@@ -750,7 +767,6 @@ export default function Home() {
                           </PopoverTrigger>
                            <PopoverContent className="w-[200px] p-1"
                               onPointerDownOutside={(e) => {
-                                // Prevent closing if clicking on the trigger
                                 if ((e.target as HTMLElement).closest('[data-radix-popover-trigger]')) {
                                   e.preventDefault();
                                 }
@@ -1075,51 +1091,19 @@ export default function Home() {
       </div>
       <div className={cn("px-4 pb-4 w-full", isMaximized ? "hidden" : "block")}>
         <div className="relative">
-          <Textarea
-            placeholder="Paste your script here..."
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            className="h-32 text-base resize-none w-full pr-32"
-            disabled={isAiEditing}
+           <Textarea
+              placeholder="Paste your script here..."
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onContextMenu={handleContextMenu}
+              className="h-32 text-base resize-none w-full pr-4"
+              disabled={isAiEditing}
           />
-          <div className="absolute bottom-2 right-2 flex items-center gap-1">
-              {isAiEditing ? (
+          {isAiEditing && (
+              <div className="absolute bottom-2 right-2 flex items-center gap-1">
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-              ) : (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-accent-foreground" onClick={() => handleAiAssist('fix')}>
-                        <SpellCheck className="h-5 w-5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top">
-                      <p>Fix Spelling & Grammar</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-accent-foreground" onClick={() => handleAiAssist('rewrite')}>
-                        <PenSquare className="h-5 w-5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top">
-                      <p>Rewrite</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-accent-foreground" onClick={() => handleAiAssist('format')}>
-                        <WrapText className="h-5 w-5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top">
-                      <p>Format for Readability</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-          </div>
+              </div>
+          )}
         </div>
       </div>
        <GoogleDocPicker
@@ -1127,6 +1111,34 @@ export default function Home() {
         onOpenChange={setIsPickerOpen}
         onImport={handleImport}
       />
+      {contextMenu && (
+        <div
+            style={{ top: contextMenu.y, left: contextMenu.x }}
+            className="fixed z-50 min-w-[12rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95"
+        >
+            <button
+                onClick={() => handleAiAssist('fix')}
+                className="w-full relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+            >
+                <SpellCheck className="h-4 w-4" />
+                <span>Fix Spelling & Grammar</span>
+            </button>
+            <button
+                onClick={() => handleAiAssist('rewrite')}
+                className="w-full relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+            >
+                <PenSquare className="h-4 w-4" />
+                <span>Rewrite Selection</span>
+            </button>
+            <button
+                onClick={() => handleAiAssist('format')}
+                className="w-full relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+            >
+                <WrapText className="h-4 w-4" />
+                <span>Format Selection</span>
+            </button>
+        </div>
+      )}
     </main>
   );
 }
