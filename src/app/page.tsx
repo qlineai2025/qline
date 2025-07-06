@@ -114,7 +114,7 @@ export default function Home() {
   const [isFlippedVertically, setIsFlippedVertically] = useState<boolean>(false);
   const [isPresenterModeActive, setIsPresenterModeActive] = useState(false);
   const [isAiEditing, setIsAiEditing] = useState(false);
-  const [isEditorExpanded, setIsEditorExpanded] = useState(true);
+  const [isEditorExpanded, setIsEditorExpanded] = useState<boolean>(false);
 
 
   const [isSpeedPopoverOpen, setIsSpeedPopoverOpen] = useState(false);
@@ -1110,44 +1110,41 @@ export default function Home() {
       </div>
       <div className={cn("px-4 pb-4 w-full", isMaximized ? "hidden" : "block")}>
         <Card className="overflow-hidden">
-          <div className="flex items-center justify-between p-1 pl-4 bg-muted/20">
-            <h3 className="text-sm font-medium text-muted-foreground">
-              Script Editor
-            </h3>
+          <div className="relative">
             <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setIsEditorExpanded(!isEditorExpanded)}
-                  >
-                    <ChevronsUpDown className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{isEditorExpanded ? "Collapse" : "Expand"}</p>
-                </TooltipContent>
-              </Tooltip>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-1 top-1 z-10 h-8 w-8"
+                            onClick={() => setIsEditorExpanded(!isEditorExpanded)}
+                        >
+                            <ChevronsUpDown className="h-4 w-4" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>{isEditorExpanded ? "Collapse" : "Expand"}</p>
+                    </TooltipContent>
+                </Tooltip>
             </TooltipProvider>
-          </div>
-          <div className={cn(isEditorExpanded ? "border-t" : "")}>
-            <div className={cn("relative", !isEditorExpanded && "hidden")}>
-              <Textarea
-                placeholder="Paste your script here..."
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                onContextMenu={handleContextMenu}
-                className="h-32 text-base resize-none w-full rounded-none border-0 bg-transparent focus-visible:ring-0"
-                disabled={isAiEditing}
-              />
-              {isAiEditing && (
-                <div className="absolute bottom-2 right-2 flex items-center gap-1">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                </div>
+
+            <Textarea
+              placeholder="Paste your script here..."
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onContextMenu={handleContextMenu}
+              className={cn(
+                'w-full resize-none rounded-none border-0 bg-transparent text-base transition-all duration-300 ease-in-out focus-visible:ring-0',
+                isEditorExpanded ? 'h-64' : 'h-32'
               )}
-            </div>
+              disabled={isAiEditing}
+            />
+            {isAiEditing && (
+                <div className="absolute bottom-2 right-2 flex items-center gap-1">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+            )}
           </div>
         </Card>
       </div>
@@ -1187,3 +1184,4 @@ export default function Home() {
     </main>
   );
 }
+
