@@ -4,6 +4,10 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { adjustScrollSpeed } from "@/ai/flows/adjust-scroll-speed";
 import { cn } from "@/lib/utils";
 
+import { useAuth } from "@/components/auth-provider";
+import { auth, googleProvider } from "@/lib/firebase";
+import { signInWithPopup, signOut } from "firebase/auth";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,7 +33,12 @@ import {
   Contrast,
   ArrowLeftRight,
   ArrowUpDown,
+  LogOut,
 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
+
 
 const DEFAULT_TEXT = `Welcome to AutoScroll Teleprompter.
 
@@ -44,6 +53,8 @@ Use the settings on the left to adjust the font size, margins, and manual scroll
 
 export default function Home() {
   const { toast } = useToast();
+  const { user, loading } = useAuth();
+
   const [text, setText] = useState<string>(DEFAULT_TEXT);
   const [scrollSpeed, setScrollSpeed] = useState<number>(20);
   const [fontSize, setFontSize] = useState<number>(64);
@@ -62,6 +73,49 @@ export default function Home() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleSignIn = async () => {
+    if (!auth || !googleProvider) {
+      toast({
+        variant: "destructive",
+        title: "Configuration Error",
+        description: "Firebase is not configured. Please add your API keys to the .env file.",
+      });
+      return;
+    }
+    try {
+      await signInWithPopup(auth, googleProvider);
+      toast({
+        title: "Signed In",
+        description: "You have successfully signed in.",
+      });
+    } catch (error) {
+      console.error("Error signing in:", error);
+      toast({
+        variant: "destructive",
+        title: "Sign In Error",
+        description: "Could not sign in with Google. Please try again.",
+      });
+    }
+  };
+
+  const handleSignOut = async () => {
+    if (!auth) return;
+    try {
+      await signOut(auth);
+      toast({
+        title: "Signed Out",
+        description: "You have successfully signed out.",
+      });
+    } catch (error) {
+      console.error("Error signing out:", error);
+       toast({
+        variant: "destructive",
+        title: "Sign Out Error",
+        description: "Could not sign out. Please try again.",
+      });
+    }
+  };
 
   const handleGoogleImport = () => {
     toast({
@@ -101,7 +155,8 @@ export default function Home() {
         title: "Speed Adjusted",
         description: `Voice analysis set scroll speed to ${newSpeed.toFixed(0)}.`,
       });
-    } catch (error) {
+    } catch (error)
+    {
       console.error("Error adjusting speed:", error);
       toast({
         variant: "destructive",
@@ -260,19 +315,28 @@ export default function Home() {
             </CardHeader>
             <CardContent className="flex flex-col gap-6">
               <div className="flex items-center justify-center gap-4">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="w-full">
-                       <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4" fill="currentColor"><title>Google</title><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.1-1.02 1.08-2.58 2.03-4.56 2.03-3.86 0-7-3.14-7-7s3.14-7 7-7c2.29 0 3.63.86 4.5 1.75l2.4-2.4C18.49 3.46 15.9 2 12.48 2c-5.45 0-9.94 4.45-9.94 9.9s4.49 9.9 9.94 9.9c3.31 0 5.21-1.1 6.84-2.73 1.69-1.69 2.23-4.03 2.23-6.14s-.04-1.2-.1-1.73h-9.04z"/></svg>
-                      Import from Google
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem onClick={handleGoogleImport}>Google Docs</DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleGoogleImport}>Google Slides</DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleGoogleImport}>Google Sheets</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {loading ? (
+                  <Skeleton className="h-10 w-full" />
+                ) : user ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="w-full">
+                         <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4" fill="currentColor"><title>Google</title><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.1-1.02 1.08-2.58 2.03-4.56 2.03-3.86 0-7-3.14-7-7s3.14-7 7-7c2.29 0 3.63.86 4.5 1.75l2.4-2.4C18.49 3.46 15.9 2 12.48 2c-5.45 0-9.94 4.45-9.94 9.9s4.49 9.9 9.94 9.9c3.31 0 5.21-1.1 6.84-2.73 1.69-1.69 2.23-4.03 2.23-6.14s-.04-1.2-.1-1.73h-9.04z"/></svg>
+                        Import from Google
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem onClick={handleGoogleImport}>Google Docs</DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleGoogleImport}>Google Slides</DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleGoogleImport}>Google Sheets</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <Button onClick={handleSignIn} variant="outline" className="w-full">
+                    <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4" fill="currentColor"><title>Google</title><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.1-1.02 1.08-2.58 2.03-4.56 2.03-3.86 0-7-3.14-7-7s3.14-7 7-7c2.29 0 3.63.86 4.5 1.75l2.4-2.4C18.49 3.46 15.9 2 12.48 2c-5.45 0-9.94 4.45-9.94 9.9s4.49 9.9 9.94 9.9c3.31 0 5.21-1.1 6.84-2.73 1.69-1.69 2.23-4.03 2.23-6.14s-.04-1.2-.1-1.73h-9.04z"/></svg>
+                    Sign in to Import
+                  </Button>
+                )}
                 
                 <Button onClick={() => setIsPlaying(!isPlaying)} className="w-full">
                   {isPlaying ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
@@ -371,6 +435,27 @@ export default function Home() {
                   />
                 </div>
               </div>
+
+              {user && (
+                <>
+                  <Separator/>
+                  <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                          <Avatar className="h-9 w-9">
+                              <AvatarImage src={user.photoURL || ''} alt={user.displayName || ''}/>
+                              <AvatarFallback>{user.displayName?.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <div className="grid gap-0.5">
+                              <p className="font-medium text-sm">{user.displayName}</p>
+                              <p className="text-xs text-muted-foreground">{user.email}</p>
+                          </div>
+                      </div>
+                      <Button variant="ghost" size="icon" onClick={handleSignOut}>
+                          <LogOut className="h-4 w-4" />
+                      </Button>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>
