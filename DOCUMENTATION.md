@@ -28,7 +28,7 @@ These icon-based buttons give you control over the teleprompter's functionality 
 
 #### Controls in the Side Panel
 *   **Voice Control (Mic Icon)**: When enabled, the app uses an AI-powered system that listens for both verbal commands and your reading pace.
-    *   **Command Recognition**: You can control the prompter with your voice. The available commands are: "next slide", "previous slide", "go to slide [number]", "stop"/"pause", "start"/"play"/"go", and "rewind". The AI prioritizes commands over script reading.
+    *   **Command Recognition**: You can control the prompter with your voice. The available commands are: "next slide", "previous slide", "go to slide [number]", "stop"/"pause", "start"/"play"/"go", "rewind", and in-text navigation like "go back to [a phrase from your script]". The AI prioritizes commands over script reading.
     *   **Pace Matching & Position Tracking**: If no command is detected, the AI falls back to its original behavior: it intelligently matches the scrolling speed to your reading pace and periodically re-centers the view on the last word you spoke.
     *   **Automatic Slide Navigation**: When in "Notes View" for a presentation, the prompter will automatically advance to the next slide once you've finished reading all the notes for the current one.
 *   **Assist Mode (ScreenShare Icon)**: This button opens a clean, secondary prompter window. You can drag this window to a second monitor and make it full-screen. It stays perfectly in sync with the main window's text, settings, and scrolling.
@@ -131,7 +131,7 @@ The second-screen "Assist Mode" is architected for robust, real-time synchroniza
 
 #### 7. AI-Powered Voice Control
 The voice control feature is an advanced AI system that interprets user speech for one of two purposes: command execution or pace tracking.
-*   **Command-First Architecture**: The application sends audio snippets to a Genkit AI flow (`controlTeleprompter`). This flow is prompted to first check for specific verbal commands (e.g., "next slide", "pause"). Commands are given top priority.
+*   **Command-First Architecture**: The application sends audio snippets to a Genkit AI flow (`controlTeleprompter`). This flow is prompted to first check for specific verbal commands (e.g., "next slide", "pause", "go back to [text]"). Commands are given top priority.
 *   **Fallback to Pace Tracking**: If the AI determines the user is not giving a command, it treats the audio as script reading. It then performs the pace-tracking function: it returns both an `adjustedScrollSpeed` based on the user's reading pace and the `lastSpokenWordIndex` to keep the prompter perfectly synchronized.
 *   **State-Aware Logic**: The flow is also sent the current state of the prompter (e.g., `isPlaying`, `prompterMode`, `currentSlideIndex`), allowing it to make intelligent decisions based on context. For example, "next slide" only has an effect if `prompterMode` is 'slides'.
 

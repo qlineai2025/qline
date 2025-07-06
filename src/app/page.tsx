@@ -418,7 +418,7 @@ export default function Home() {
           currentSlideIndex,
       };
       
-      const { command, slideNumber, lastSpokenWordIndex, adjustedScrollSpeed } = await controlTeleprompter({
+      const { command, slideNumber, targetWordIndex, lastSpokenWordIndex, adjustedScrollSpeed } = await controlTeleprompter({
         audioDataUri,
         scriptText: text,
         currentScrollSpeed: scrollSpeedRef.current,
@@ -452,6 +452,15 @@ export default function Home() {
             break;
         case 'rewind':
             handleRewind();
+            break;
+        case 'go_to_text':
+            if (targetWordIndex !== null) {
+                const targetWord = document.getElementById(`word-${targetWordIndex}`);
+                if (targetWord) {
+                    targetWord.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    channelRef.current?.postMessage({ type: 'scroll_to_word', payload: { wordIndex: targetWordIndex } });
+                }
+            }
             break;
         case 'no_op':
         default:
