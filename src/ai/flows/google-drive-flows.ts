@@ -5,18 +5,20 @@
  * - listGoogleDocs - Fetches a list of Google Docs from the user's Drive.
  * - getGoogleDocContent - Fetches and parses the text content of a specific Google Doc.
  * - listGoogleSlides - Fetches a list of Google Slides from the user's Drive.
- * - getGoogleSlideImageUrls - Fetches the image URLs for all slides in a presentation.
+ * - getGoogleSlidesContent - Fetches image URLs and speaker notes for all slides in a presentation.
  * - GoogleDoc - The type for a single Google Doc file.
  * - ListGoogleDocsInput - The input type for the listGoogleDocs function.
  * - GetGoogleDocContentInput - The input type for the getGoogleDocContent function.
  * - GoogleSlide - The type for a single Google Slide file.
  * - ListGoogleSlidesInput - The input type for the listGoogleSlides function.
- * - GetGoogleSlideContentInput - The input type for the getGoogleSlideImageUrls function.
+ * - GetGoogleSlidesContentInput - The input type for the getGoogleSlidesContent function.
+ * - GoogleSlideContent - The type for a single slide's content (image URL and speaker notes).
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { google } from 'googleapis';
+import type {slides_v1} from 'googleapis';
 
 // Schema for a single Google Doc file
 const GoogleDocSchema = z.object({
@@ -53,12 +55,20 @@ const ListGoogleSlidesInputSchema = z.object({
 });
 export type ListGoogleSlidesInput = z.infer<typeof ListGoogleSlidesInputSchema>;
 
+// Schema for the content of a single Google Slide
+const GoogleSlideContentSchema = z.object({
+  imageUrl: z.string(),
+  speakerNotes: z.string(),
+});
+export type GoogleSlideContent = z.infer<typeof GoogleSlideContentSchema>;
+
+
 // Input schema for getting Google Slide content
-const GetGoogleSlideContentInputSchema = z.object({
+const GetGoogleSlidesContentInputSchema = z.object({
   accessToken: z.string().describe('The OAuth2 access token for the user.'),
   presentationId: z.string().describe('The ID of the Google Slides presentation to fetch.'),
 });
-export type GetGoogleSlideContentInput = z.infer<typeof GetGoogleSlideContentInputSchema>;
+export type GetGoogleSlidesContentInput = z.infer<typeof GetGoogleSlidesContentInputSchema>;
 
 
 /**
@@ -194,13 +204,25 @@ export const listGoogleSlides = ai.defineFlow(
 
 
 /**
- * Fetches the image URLs of all slides in a presentation.
+ * Extracts the text from a TextElement array.
+ * @param textElements An array of TextElement objects.
+ * @returns The concatenated string content.
  */
-export const getGoogleSlideImageUrls = ai.defineFlow(
+const extractText = (textElements: slides_v1.Schema$TextElement[] | undefined): string => {
+  if (!textElements) return '';
+  return textElements
+    .map(textElement => textElement.textRun?.content || '')
+    .join('');
+};
+
+/**
+ * Fetches the image URLs and speaker notes of all slides in a presentation.
+ */
+export const getGoogleSlidesContent = ai.defineFlow(
   {
-    name: 'getGoogleSlideImageUrlsFlow',
-    inputSchema: GetGoogleSlideContentInputSchema,
-    outputSchema: z.array(z.string()),
+    name: 'getGoogleSlidesContentFlow',
+    inputSchema: GetGoogleSlidesContentInputSchema,
+    outputSchema: z.array(GoogleSlideContentSchema),
   },
   async (input) => {
     try {
@@ -209,25 +231,43 @@ export const getGoogleSlideImageUrls = ai.defineFlow(
 
       const presentation = await slidesApi.presentations.get({
         presentationId: input.presentationId,
+        fields: 'slides(objectId,slideProperties.notesPage),notesMasters',
       });
-
-      const pageIds = presentation.data.slides?.map(slide => slide.objectId!) ?? [];
-      if (!pageIds.length) {
+      
+      const slides = presentation.data.slides;
+      if (!slides?.length) {
         return [];
       }
 
-      const imageUrls = await Promise.all(
-        pageIds.map(async (pageId) => {
+      const slidesContent = await Promise.all(
+        slides.map(async (slide) => {
+          const pageId = slide.objectId!;
+          let speakerNotes = '';
+          
+          // Get Thumbnail
           const thumbnail = await slidesApi.presentations.pages.getThumbnail({
             presentationId: input.presentationId,
             pageObjectId: pageId,
             'thumbnailProperties.thumbnailSize': 'LARGE'
           });
-          return thumbnail.data.contentUrl!;
+          const imageUrl = thumbnail.data.contentUrl!;
+
+          // Get Speaker Notes
+          const notesPageId = slide.slideProperties?.notesPage?.objectId;
+          if (notesPageId) {
+            const notesPage = await slidesApi.presentations.pages.get({
+              presentationId: input.presentationId,
+              pageObjectId: notesPageId
+            });
+            const notesBody = notesPage.data.pageElements?.find(el => el.shape?.placeholder?.type === 'BODY');
+            speakerNotes = extractText(notesBody?.shape?.text?.textElements);
+          }
+          
+          return { imageUrl, speakerNotes };
         })
       );
       
-      return imageUrls.filter(url => !!url);
+      return slidesContent.filter(content => !!content.imageUrl);
     } catch (error) {
       console.error('Error fetching Google Slides content:', error);
       throw new Error('Failed to fetch Google Slides content.');

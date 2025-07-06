@@ -68,6 +68,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { GoogleDocPicker } from "@/components/google-doc-picker";
 import { GoogleSlidePicker } from "@/components/google-slide-picker";
+import { GoogleSlideContent } from "@/ai/flows/google-drive-flows";
 
 
 const DEFAULT_TEXT = `Welcome to AutoScroll Teleprompter.
@@ -121,7 +122,7 @@ export default function Home() {
   const [isEditorExpanded, setIsEditorExpanded] = useState<boolean>(false);
   
   const [prompterMode, setPrompterMode] = useState<'text' | 'slides'>('text');
-  const [slides, setSlides] = useState<string[]>([]);
+  const [slides, setSlides] = useState<GoogleSlideContent[]>([]);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
 
   const [isSpeedPopoverOpen, setIsSpeedPopoverOpen] = useState(false);
@@ -313,13 +314,13 @@ export default function Home() {
     setIsDocPickerOpen(false);
   };
 
-  const handleSlideImport = (imageUrls: string[]) => {
-    if (imageUrls.length > 0) {
-      setPrompterMode('slides');
-      setSlides(imageUrls);
-      setCurrentSlideIndex(0);
-      setText(''); // Clear text so it doesn't show up if we switch back
-      setIsPlaying(false); // Stop scrolling if it was active
+  const handleSlideImport = (slideContents: GoogleSlideContent[]) => {
+    if (slideContents.length > 0) {
+        setPrompterMode('slides');
+        setSlides(slideContents);
+        setCurrentSlideIndex(0);
+        setText(slideContents[0]?.speakerNotes || ''); 
+        setIsPlaying(false);
     }
     setIsSlidePickerOpen(false);
   };
@@ -549,11 +550,13 @@ export default function Home() {
   const handleNextSlide = () => {
     const newIndex = Math.min(currentSlideIndex + 1, slides.length - 1);
     setCurrentSlideIndex(newIndex);
+    setText(slides[newIndex]?.speakerNotes || '');
     channelRef.current?.postMessage({ type: 'slide_change', payload: { newIndex } });
   };
   const handlePrevSlide = () => {
     const newIndex = Math.max(currentSlideIndex - 1, 0);
     setCurrentSlideIndex(newIndex);
+    setText(slides[newIndex]?.speakerNotes || '');
     channelRef.current?.postMessage({ type: 'slide_change', payload: { newIndex } });
   };
   
@@ -691,6 +694,7 @@ export default function Home() {
   );
   
   const handleContextMenu = (e: React.MouseEvent<HTMLTextAreaElement>) => {
+    if (prompterMode === 'slides') return;
     const textarea = e.currentTarget;
     const selectionStart = textarea.selectionStart;
     const selectionEnd = textarea.selectionEnd;
@@ -1114,7 +1118,7 @@ export default function Home() {
                       )}
                   >
                       <img
-                          src={slides[currentSlideIndex]}
+                          src={slides[currentSlideIndex]?.imageUrl}
                           alt={`Slide ${currentSlideIndex + 1}`}
                           className="max-w-full max-h-full object-contain"
                       />
@@ -1218,11 +1222,11 @@ export default function Home() {
           </div>
         </div>
       </div>
-      <div className={cn("px-4 pb-4 w-full", isMaximized || prompterMode === 'slides' ? "hidden" : "block")}>
+      <div className={cn("px-4 pb-4 w-full", isMaximized ? "hidden" : "block")}>
         <Card className="overflow-hidden">
           <div className="relative">
             <TooltipProvider>
-              <div className="absolute right-1 top-1 z-10 flex items-center">
+              <div className={cn("absolute right-1 top-1 z-10 flex items-center", prompterMode === 'slides' ? 'hidden': 'flex')}>
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Button
@@ -1258,7 +1262,7 @@ export default function Home() {
             </TooltipProvider>
 
             <Textarea
-              placeholder="Paste your script here..."
+              placeholder={prompterMode === 'text' ? "Paste your script here..." : "Speaker notes will appear here..."}
               value={text}
               onChange={(e) => setText(e.target.value)}
               onContextMenu={handleContextMenu}
@@ -1266,7 +1270,7 @@ export default function Home() {
                 'w-full resize-none rounded-none border-0 bg-transparent text-base transition-all duration-300 ease-in-out focus-visible:ring-0',
                 isEditorExpanded ? 'h-96' : 'h-32'
               )}
-              disabled={isAiEditing}
+              disabled={isAiEditing || prompterMode === 'slides'}
             />
             {isAiEditing && (
                 <div className="absolute bottom-2 right-2 flex items-center gap-1">

@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import {
   listGoogleSlides,
-  getGoogleSlideImageUrls,
+  getGoogleSlidesContent,
   type GoogleSlide,
+  type GoogleSlideContent,
 } from '@/ai/flows/google-drive-flows';
 import { useToast } from '@/hooks/use-toast';
 
@@ -23,7 +24,7 @@ import { Presentation, Loader2 } from 'lucide-react';
 interface GoogleSlidePickerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onImport: (imageUrls: string[]) => void;
+  onImport: (slideContents: GoogleSlideContent[]) => void;
 }
 
 export function GoogleSlidePicker({
@@ -64,11 +65,11 @@ export function GoogleSlidePicker({
     if (!accessToken) return;
     setIsImporting(presId);
     try {
-      const imageUrls = await getGoogleSlideImageUrls({
+      const slideContents = await getGoogleSlidesContent({
         accessToken,
         presentationId: presId,
       });
-      onImport(imageUrls);
+      onImport(slideContents);
       toast({
         title: 'Import Successful',
         description: 'Your presentation has been loaded.',
