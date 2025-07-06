@@ -101,10 +101,11 @@ export default function Home() {
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
-  const scrollSpeedRef = useRef(scrollSpeed);
   const animationFrameRef = useRef<number | null>(null);
-
+  const lastTimeRef = useRef<number | null>(null);
+  const scrollSpeedRef = useRef(scrollSpeed);
   useEffect(() => { scrollSpeedRef.current = scrollSpeed; }, [scrollSpeed]);
+
   useEffect(() => { setSpeedInput(String(scrollSpeed)) }, [scrollSpeed]);
   useEffect(() => { setFontSizeInput(String(fontSize)) }, [fontSize]);
   useEffect(() => { setHorizontalMarginInput(String(horizontalMargin)) }, [horizontalMargin]);
@@ -211,15 +212,15 @@ export default function Home() {
       
       const targetWord = document.getElementById(`word-${lastSpokenWordIndex}`);
       if (targetWord) {
-        targetWord.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        targetWord.scrollIntoView({ block: 'center' });
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error tracking speech position:", error);
       toast({
         variant: "destructive",
         title: "AI Error",
-        description: "Could not track speech position.",
+        description: error.message || "Could not track speech position.",
       });
     } finally {
       setIsProcessingAudio(false);
@@ -246,7 +247,7 @@ export default function Home() {
           if (mediaRecorderRef.current?.state === "inactive") {
             mediaRecorderRef.current.start();
           }
-        }, 5000);
+        }, 2000);
 
       }).catch(err => {
         console.error("Error accessing microphone:", err);
@@ -272,50 +273,50 @@ export default function Home() {
     audioChunksRef.current = [];
   }, []);
 
-  const scrollAnimation = useCallback(() => {
-    if (!isPlaying || isVoiceControlOn || !displayRef.current) {
-        if (animationFrameRef.current) {
-            cancelAnimationFrame(animationFrameRef.current);
-            animationFrameRef.current = null;
-        }
-        return;
+  const scrollAnimation = useCallback((timestamp: number) => {
+    if (!lastTimeRef.current) {
+      lastTimeRef.current = timestamp;
     }
+    const deltaTime = timestamp - lastTimeRef.current;
+    lastTimeRef.current = timestamp;
 
-    let lastTime: number | null = null;
-    const animate = (timestamp: number) => {
-        if (!lastTime) {
-            lastTime = timestamp;
-        }
-        const deltaTime = timestamp - lastTime;
-        lastTime = timestamp;
+    if (displayRef.current) {
+      const currentDisplay = displayRef.current;
+      if (currentDisplay.scrollHeight > currentDisplay.clientHeight) {
+        const scrollAmount = (scrollSpeedRef.current / 60) * (deltaTime / (1000/60));
+        currentDisplay.scrollTop += scrollAmount;
+      }
+      
+      if (currentDisplay.scrollTop + currentDisplay.clientHeight >= currentDisplay.scrollHeight - 1) {
+          setIsPlaying(false);
+      } else {
+          animationFrameRef.current = requestAnimationFrame(scrollAnimation);
+      }
+    }
+  }, []);
 
-        if (!displayRef.current) return;
+  const startScroll = useCallback(() => {
+    if (!isVoiceControlOn) {
+      lastTimeRef.current = null; // Reset timer
+      animationFrameRef.current = requestAnimationFrame(scrollAnimation);
+    }
+  }, [isVoiceControlOn, scrollAnimation]);
 
-        const currentDisplay = displayRef.current;
-        if (currentDisplay.scrollHeight > currentDisplay.clientHeight) {
-            currentDisplay.scrollTop += (scrollSpeedRef.current / 60) * (deltaTime / (1000 / 60));
-        }
-
-        if (currentDisplay.scrollTop + currentDisplay.clientHeight >= currentDisplay.scrollHeight - 1) {
-            setIsPlaying(false);
-        } else {
-            animationFrameRef.current = requestAnimationFrame(animate);
-        }
-    };
-    animationFrameRef.current = requestAnimationFrame(animate);
-
-  }, [isPlaying, isVoiceControlOn]);
+  const stopScroll = useCallback(() => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
-    if (isPlaying) {
-      scrollAnimation();
+    if (isPlaying && !isVoiceControlOn) {
+      startScroll();
+    } else {
+      stopScroll();
     }
-    return () => {
-        if (animationFrameRef.current) {
-            cancelAnimationFrame(animationFrameRef.current);
-        }
-    };
-  }, [isPlaying, scrollAnimation]);
+    return stopScroll;
+  }, [isPlaying, isVoiceControlOn, startScroll, stopScroll]);
 
 
   useEffect(() => {
@@ -366,14 +367,20 @@ export default function Home() {
   const popoverContentClass = "w-[150px] p-2";
   
   const processedText = useCallback(() => {
-    // Split by space to identify words, but render with original whitespace for layout.
-    // We wrap each word in a span with a unique ID for voice tracking.
-    const words = text.split(' ');
-    return words.map((word, index) => (
-      <span key={index} id={`word-${index}`}>
-        {word}{' '}
-      </span>
-    ));
+    const words = text.split(/(\s+)/);
+    let wordCount = 0;
+    return words.map((word, index) => {
+      if (word.trim().length > 0) {
+        const wordIndex = wordCount;
+        wordCount++;
+        return (
+          <span key={index} id={`word-${wordIndex}`}>
+            {word}
+          </span>
+        );
+      }
+      return <span key={index}>{word}</span>;
+    });
   }, [text]);
 
   return (
@@ -683,7 +690,7 @@ export default function Home() {
                 size="icon"
                 className={cn(
                   "absolute bottom-4 right-4 z-10",
-                  isHighContrast && "bg-black text-white hover:bg-black/80 hover:text-white"
+                  isHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : ""
                 )}
               >
                {isMaximized ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
