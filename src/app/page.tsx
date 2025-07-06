@@ -13,8 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
@@ -22,6 +20,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Play,
   Pause,
@@ -34,6 +38,10 @@ import {
   ArrowLeftRight,
   ArrowUpDown,
   LogOut,
+  Gauge,
+  Text as TextIcon,
+  StretchHorizontal,
+  StretchVertical
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -281,176 +289,187 @@ export default function Home() {
   return (
     <main
       className={cn(
-        "min-h-screen bg-background transition-all duration-300",
+        "flex flex-col h-screen bg-background transition-all duration-300",
         isMaximized ? "p-0" : "p-4"
       )}
     >
       <div
         className={cn(
-          "grid gap-4 max-w-screen-2xl mx-auto",
-          isMaximized ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-3"
+          "flex-1 grid gap-4 max-w-screen-2xl mx-auto w-full min-h-0",
+          isMaximized ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-[250px_1fr]"
         )}
       >
         <div className={cn("lg:col-span-1", isMaximized ? "hidden" : "block")}>
-          <div className="h-[85vh] overflow-y-auto pr-4">
+          <div className="h-full overflow-y-auto pr-2">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Settings className="text-primary"/>
-                  Controls & Settings
+                  Controls
                 </CardTitle>
               </CardHeader>
-              <CardContent className="flex flex-col gap-4">
-                <div className="flex items-center justify-center gap-4">
-                  {loading ? (
-                    <Skeleton className="h-10 w-full" />
-                  ) : user ? (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full">
-                           <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4" fill="currentColor"><title>Google</title><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.1-1.02 1.08-2.58 2.03-4.56 2.03-3.86 0-7-3.14-7-7s3.14-7 7-7c2.29 0 3.63.86 4.5 1.75l2.4-2.4C18.49 3.46 15.9 2 12.48 2c-5.45 0-9.94 4.45-9.94 9.9s4.49 9.9 9.94 9.9c3.31 0 5.21-1.1 6.84-2.73 1.69-1.69 2.23-4.03 2.23-6.14s-.04-1.2-.1-1.73h-9.04z"/></svg>
-                          Import from Google
+              <CardContent className="flex flex-col gap-6">
+                 <TooltipProvider>
+                    <div className="flex items-center justify-center gap-2">
+                      {loading ? (
+                        <Skeleton className="h-10 w-full" />
+                      ) : user ? (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="w-full">
+                               <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4" fill="currentColor"><title>Google</title><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.1-1.02 1.08-2.58 2.03-4.56 2.03-3.86 0-7-3.14-7-7s3.14-7 7-7c2.29 0 3.63.86 4.5 1.75l2.4-2.4C18.49 3.46 15.9 2 12.48 2c-5.45 0-9.94 4.45-9.94 9.9s4.49 9.9 9.94 9.9c3.31 0 5.21-1.1 6.84-2.73 1.69-1.69 2.23-4.03 2.23-6.14s-.04-1.2-.1-1.73h-9.04z"/></svg>
+                              Import
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuItem onClick={handleGoogleImport}>Google Docs</DropdownMenuItem>
+                            <DropdownMenuItem onClick={handleGoogleImport}>Google Slides</DropdownMenuItem>
+                            <DropdownMenuItem onClick={handleGoogleImport}>Google Sheets</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      ) : (
+                        <Button onClick={handleSignIn} variant="outline" className="w-full">
+                          <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4" fill="currentColor"><title>Google</title><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.1-1.02 1.08-2.58 2.03-4.56 2.03-3.86 0-7-3.14-7-7s3.14-7 7-7c2.29 0 3.63.86 4.5 1.75l2.4-2.4C18.49 3.46 15.9 2 12.48 2c-5.45 0-9.94 4.45-9.94 9.9s4.49 9.9 9.94 9.9c3.31 0 5.21-1.1 6.84-2.73 1.69-1.69 2.23-4.03 2.23-6.14s-.04-1.2-.1-1.73h-9.04z"/></svg>
+                          Sign in
                         </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem onClick={handleGoogleImport}>Google Docs</DropdownMenuItem>
-                        <DropdownMenuItem onClick={handleGoogleImport}>Google Slides</DropdownMenuItem>
-                        <DropdownMenuItem onClick={handleGoogleImport}>Google Sheets</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  ) : (
-                    <Button onClick={handleSignIn} variant="outline" className="w-full">
-                      <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4" fill="currentColor"><title>Google</title><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.1-1.02 1.08-2.58 2.03-4.56 2.03-3.86 0-7-3.14-7-7s3.14-7 7-7c2.29 0 3.63.86 4.5 1.75l2.4-2.4C18.49 3.46 15.9 2 12.48 2c-5.45 0-9.94 4.45-9.94 9.9s4.49 9.9 9.94 9.9c3.31 0 5.21-1.1 6.84-2.73 1.69-1.69 2.23-4.03 2.23-6.14s-.04-1.2-.1-1.73h-9.04z"/></svg>
-                      Sign in to Import
-                    </Button>
-                  )}
-                  
-                  <Button onClick={handlePlayPause} className="w-full">
-                    {isPlaying ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
-                    {isPlaying ? "Pause" : "Play"}
-                  </Button>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="voice-control" className="flex items-center gap-2">
-                      {isVoiceControlOn ? <Mic className="text-accent" /> : <MicOff />}
-                      Voice Control
-                    </Label>
-                     <Switch
-                      id="voice-control"
-                      checked={isVoiceControlOn}
-                      onCheckedChange={setIsVoiceControlOn}
-                    />
-                  </div>
-                   {isProcessingAudio && <p className="text-sm text-muted-foreground text-center">Adjusting speed...</p>}
-                </div>
-
-                <div className="space-y-4 pt-4 border-t">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="high-contrast" className="flex items-center gap-2">
-                      <Contrast className="h-4 w-4" />
-                      High Contrast
-                    </Label>
-                     <Switch
-                      id="high-contrast"
-                      checked={isHighContrast}
-                      onCheckedChange={setIsHighContrast}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="flip-horizontal" className="flex items-center gap-2">
-                      <ArrowLeftRight className="h-4 w-4" />
-                      Flip Horizontal
-                    </Label>
-                     <Switch
-                      id="flip-horizontal"
-                      checked={isFlippedHorizontally}
-                      onCheckedChange={setIsFlippedHorizontally}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="flip-vertical" className="flex items-center gap-2">
-                      <ArrowUpDown className="h-4 w-4" />
-                      Flip Vertical
-                    </Label>
-                     <Switch
-                      id="flip-vertical"
-                      checked={isFlippedVertically}
-                      onCheckedChange={setIsFlippedVertically}
-                    />
-                  </div>
-                </div>
-
-
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="speed">Scroll Speed: {scrollSpeed.toFixed(0)}</Label>
-                    <Slider
-                      id="speed"
-                      min={0}
-                      max={100}
-                      step={1}
-                      value={[scrollSpeed]}
-                      onValueChange={(value) => setScrollSpeed(value[0])}
-                      disabled={isVoiceControlOn}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="font-size">Font Size: {fontSize}px</Label>
-                    <Slider
-                      id="font-size"
-                      min={12}
-                      max={120}
-                      step={1}
-                      value={[fontSize]}
-                      onValueChange={(value) => setFontSize(value[0])}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="horizontal-margin">Horizontal Margin: {horizontalMargin}%</Label>
-                    <Slider
-                      id="horizontal-margin"
-                      min={0}
-                      max={40}
-                      step={1}
-                      value={[horizontalMargin]}
-                      onValueChange={(value) => setHorizontalMargin(value[0])}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="vertical-margin">Vertical Margin: {verticalMargin}%</Label>
-                    <Slider
-                      id="vertical-margin"
-                      min={0}
-                      max={40}
-                      step={1}
-                      value={[verticalMargin]}
-                      onValueChange={(value) => setVerticalMargin(value[0])}
-                    />
-                  </div>
-                </div>
-
-                {user && (
-                  <>
-                    <Separator/>
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <Avatar className="h-9 w-9">
-                                <AvatarImage src={user.photoURL || ''} alt={user.displayName || ''}/>
-                                <AvatarFallback>{user.displayName?.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <div className="grid gap-0.5">
-                                <p className="font-medium text-sm">{user.displayName}</p>
-                                <p className="text-xs text-muted-foreground">{user.email}</p>
-                            </div>
-                        </div>
-                        <Button variant="ghost" size="icon" onClick={handleSignOut}>
-                            <LogOut className="h-4 w-4" />
-                        </Button>
+                      )}
+                      
+                      <Button onClick={handlePlayPause} className="w-full">
+                        {isPlaying ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
+                        {isPlaying ? "Pause" : "Play"}
+                      </Button>
                     </div>
-                  </>
-                )}
+
+                    <div className="flex items-center justify-around pt-4 border-t">
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={() => setIsVoiceControlOn(!isVoiceControlOn)}>
+                                    <Mic className={cn(isVoiceControlOn && "text-accent")} />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Voice Control</p></TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={() => setIsHighContrast(!isHighContrast)}>
+                                    <Contrast className={cn(isHighContrast && "text-accent")} />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>High Contrast</p></TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={() => setIsFlippedHorizontally(!isFlippedHorizontally)}>
+                                    <ArrowLeftRight className={cn(isFlippedHorizontally && "text-accent")} />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Flip Horizontal</p></TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={() => setIsFlippedVertically(!isFlippedVertically)}>
+                                    <ArrowUpDown className={cn(isFlippedVertically && "text-accent")} />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Flip Vertical</p></TooltipContent>
+                        </Tooltip>
+                    </div>
+                     {isProcessingAudio && <p className="text-sm text-muted-foreground text-center">Adjusting speed...</p>}
+
+                    <div className="space-y-4 pt-4 border-t">
+                        <div className="flex items-center gap-3">
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="cursor-help"><Gauge/></Button>
+                                </TooltipTrigger>
+                                <TooltipContent><p>Scroll Speed: {scrollSpeed.toFixed(0)}</p></TooltipContent>
+                            </Tooltip>
+                            <Slider
+                              id="speed"
+                              min={0}
+                              max={100}
+                              step={1}
+                              value={[scrollSpeed]}
+                              onValueChange={(value) => setScrollSpeed(value[0])}
+                              disabled={isVoiceControlOn}
+                            />
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="cursor-help"><TextIcon/></Button>
+                                </TooltipTrigger>
+                                <TooltipContent><p>Font Size: {fontSize}px</p></TooltipContent>
+                            </Tooltip>
+                            <Slider
+                              id="font-size"
+                              min={12}
+                              max={120}
+                              step={1}
+                              value={[fontSize]}
+                              onValueChange={(value) => setFontSize(value[0])}
+                            />
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="cursor-help"><StretchHorizontal/></Button>
+                                </TooltipTrigger>
+                                <TooltipContent><p>Horizontal Margin: {horizontalMargin}%</p></TooltipContent>
+                            </Tooltip>
+                            <Slider
+                              id="horizontal-margin"
+                              min={0}
+                              max={40}
+                              step={1}
+                              value={[horizontalMargin]}
+                              onValueChange={(value) => setHorizontalMargin(value[0])}
+                            />
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="cursor-help"><StretchVertical/></Button>
+                                </TooltipTrigger>
+                                <TooltipContent><p>Vertical Margin: {verticalMargin}%</p></TooltipContent>
+                            </Tooltip>
+                            <Slider
+                              id="vertical-margin"
+                              min={0}
+                              max={40}
+                              step={1}
+                              value={[verticalMargin]}
+                              onValueChange={(value) => setVerticalMargin(value[0])}
+                            />
+                        </div>
+                    </div>
+
+                    {user && (
+                      <>
+                        <Separator/>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <Avatar className="h-9 w-9">
+                                    <AvatarImage src={user.photoURL || ''} alt={user.displayName || ''}/>
+                                    <AvatarFallback>{user.displayName?.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div className="grid gap-0.5">
+                                    <p className="font-medium text-sm">{user.displayName}</p>
+                                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                                </div>
+                            </div>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" onClick={handleSignOut}>
+                                        <LogOut className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent><p>Sign Out</p></TooltipContent>
+                            </Tooltip>
+                        </div>
+                      </>
+                    )}
+                 </TooltipProvider>
               </CardContent>
             </Card>
           </div>
@@ -458,8 +477,8 @@ export default function Home() {
 
         <div
           className={cn(
-            "lg:col-span-2 flex flex-col gap-4",
-            isMaximized ? "col-span-1 lg:col-span-3 h-screen" : "h-[85vh]"
+            "flex flex-col gap-4 h-full",
+            isMaximized ? "col-span-1" : ""
           )}
         >
           <div className="flex-1 min-h-0 relative">
@@ -511,16 +530,18 @@ export default function Home() {
                {isMaximized ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
              </Button>
           </div>
-          <div className={cn(isMaximized ? "hidden" : "block")}>
-            <Textarea
-              placeholder="Paste your script here..."
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              className="h-64 text-base resize-none"
-            />
-          </div>
         </div>
+      </div>
+       <div className={cn("max-w-screen-2xl mx-auto w-full pt-4", isMaximized ? "hidden" : "block")}>
+        <Textarea
+          placeholder="Paste your script here..."
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          className="h-32 text-base resize-none"
+        />
       </div>
     </main>
   );
 }
+
+  
