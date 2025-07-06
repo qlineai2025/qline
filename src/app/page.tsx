@@ -10,7 +10,7 @@ import { auth, googleProvider } from "@/lib/firebase";
 import { signInWithPopup, signOut } from "firebase/auth";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
@@ -256,7 +256,7 @@ export default function Home() {
 
     currentDisplay.scrollTop += scrollAmount;
 
-    if (currentDisplay.scrollTop + currentDisplay.clientHeight >= currentDisplay.scrollHeight) {
+    if (currentDisplay.scrollTop + currentDisplay.clientHeight >= currentDisplay.scrollHeight -1) {
       setIsPlaying(false);
     }
   }, [scrollSpeed, isPlaying]);
@@ -297,8 +297,12 @@ export default function Home() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (isMaximized && event.key === 'Escape') {
+      if (event.key === 'Escape' && (isMaximized || isSpeedPopoverOpen || isFontSizePopoverOpen || isHorizontalMarginPopoverOpen || isVerticalMarginPopoverOpen)) {
         setIsMaximized(false);
+        setIsSpeedPopoverOpen(false);
+        setIsFontSizePopoverOpen(false);
+        setIsHorizontalMarginPopoverOpen(false);
+        setIsVerticalMarginPopoverOpen(false);
       }
     };
 
@@ -307,11 +311,14 @@ export default function Home() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isMaximized]);
+  }, [isMaximized, isSpeedPopoverOpen, isFontSizePopoverOpen, isHorizontalMarginPopoverOpen, isVerticalMarginPopoverOpen]);
 
   const handlePlayPause = () => {
     if (!isPlaying) {
       setIsMaximized(true);
+      if (displayRef.current) {
+        displayRef.current.scrollTop = 0;
+      }
     }
     setIsPlaying(!isPlaying);
   };
@@ -604,7 +611,7 @@ export default function Home() {
                 <div
                   ref={displayRef}
                   className={cn(
-                    "h-full overflow-y-auto scroll-smooth flex justify-center items-center",
+                    "h-full overflow-y-auto scroll-smooth flex justify-center",
                     isHighContrast && "bg-black",
                     isFlippedHorizontally && "scale-x-[-1]",
                     isFlippedVertically && "scale-y-[-1]"
@@ -654,5 +661,4 @@ export default function Home() {
       </div>
     </main>
   );
-
-    
+}
