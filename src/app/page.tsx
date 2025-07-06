@@ -10,7 +10,7 @@ import { auth, googleProvider } from "@/lib/firebase";
 import { signInWithPopup, signOut } from "firebase/auth";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
@@ -46,7 +46,6 @@ import {
   Text as TextIcon,
   StretchHorizontal,
   StretchVertical,
-  X
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -250,18 +249,21 @@ export default function Home() {
   }, []);
 
   const scroll = useCallback(() => {
-    if (!displayRef.current) return;
+    if (!isPlaying || !displayRef.current) return;
 
     const currentDisplay = displayRef.current;
+    // Don't scroll if there is no scrollbar
+    if (currentDisplay.scrollHeight <= currentDisplay.clientHeight) return;
+
     const pixelsPerSecond = scrollSpeed;
     const scrollAmount = pixelsPerSecond / 60.0;
 
     currentDisplay.scrollTop += scrollAmount;
 
-    if (currentDisplay.scrollTop + currentDisplay.clientHeight >= currentDisplay.scrollHeight -1) {
+    if (currentDisplay.scrollTop + currentDisplay.clientHeight >= currentDisplay.scrollHeight - 1) {
       setIsPlaying(false);
     }
-  }, [scrollSpeed]);
+  }, [scrollSpeed, isPlaying]);
 
   useEffect(() => {
     const animate = () => {
@@ -564,7 +566,7 @@ export default function Home() {
                                 <div className="grid gap-0.5">
                                     <p className="font-medium text-sm">{user.displayName}</p>
                                     <p className="text-xs text-muted-foreground">{user.email}</p>
-                                d</div>
+                                </div>
                             </div>
                             <Tooltip>
                                 <TooltipTrigger asChild>
@@ -629,7 +631,7 @@ export default function Home() {
             </Card>
              <Button
                 onClick={() => setIsMaximized(!isMaximized)}
-                variant="outline"
+                variant="ghost"
                 size="icon"
                 className={cn(
                   "absolute bottom-4 right-4 z-10",

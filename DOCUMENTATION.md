@@ -88,7 +88,7 @@ The main prompter display is engineered to be robust and flexible.
 *   **Seamless Full-Screen**:
     *   Full-screen mode is triggered automatically on "Play" or manually via the dedicated button.
     *   In full-screen mode, the prompter area expands to fill the entire viewport, and its borders/rounding are removed for a completely immersive view.
-    *   The full-screen button's style adapts to high-contrast mode (changing from outline to solid black) to ensure it is always visible.
+    *   The full-screen button's style adapts to high-contrast mode (changing from a ghost style to solid black) to ensure it is always visible.
 
 #### 4. Minimalist Script Editor
 The script editor at the bottom of the screen is intentionally minimalist.
