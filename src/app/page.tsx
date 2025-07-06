@@ -124,6 +124,7 @@ export default function Home() {
   const [newSettingName, setNewSettingName] = useState('');
   const [isLoadPopoverOpen, setIsLoadPopoverOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [loadedSettingName, setLoadedSettingName] = useState<string | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const displayRef = useRef<HTMLDivElement>(null);
@@ -172,6 +173,32 @@ export default function Home() {
       setTimeout(() => searchInputRef.current?.focus(), 100);
     }
   }, [isLoadPopoverOpen]);
+
+  // Sync loaded setting name with current settings
+  useEffect(() => {
+    const currentSettings = { scrollSpeed, fontSize, horizontalMargin, verticalMargin };
+
+    const isDefault =
+        currentSettings.scrollSpeed === DEFAULT_SETTINGS.scrollSpeed &&
+        currentSettings.fontSize === DEFAULT_SETTINGS.fontSize &&
+        currentSettings.horizontalMargin === DEFAULT_SETTINGS.horizontalMargin &&
+        currentSettings.verticalMargin === DEFAULT_SETTINGS.verticalMargin;
+
+    if (isDefault) {
+        setLoadedSettingName(null);
+        return;
+    }
+
+    const matchingSetting = savedSettings.find(s =>
+        s.scrollSpeed === scrollSpeed &&
+        s.fontSize === fontSize &&
+        s.horizontalMargin === horizontalMargin &&
+        s.verticalMargin === verticalMargin
+    );
+
+    setLoadedSettingName(matchingSetting ? matchingSetting.name : null);
+
+  }, [scrollSpeed, fontSize, horizontalMargin, verticalMargin, savedSettings]);
 
 
   // Initialize broadcast channel for presenter mode
@@ -607,7 +634,7 @@ export default function Home() {
                         <Popover open={isLoadPopoverOpen} onOpenChange={setIsLoadPopoverOpen}>
                           <PopoverTrigger asChild>
                             <Button variant="link" className="p-0 h-auto text-muted-foreground hover:no-underline hover:text-accent-foreground focus-visible:ring-0">
-                                Prompter Settings
+                                {loadedSettingName || 'Prompter Settings'}
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-[240px] p-2" align="start">
