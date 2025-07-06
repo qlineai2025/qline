@@ -10,7 +10,7 @@ import { auth, googleProvider } from "@/lib/firebase";
 import { signInWithPopup, signOut } from "firebase/auth";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
@@ -68,10 +68,10 @@ export default function Home() {
   const { user, loading } = useAuth();
 
   const [text, setText] = useState<string>(DEFAULT_TEXT);
-  const [scrollSpeed, setScrollSpeed] = useState<number>(20);
-  const [fontSize, setFontSize] = useState<number>(64);
-  const [horizontalMargin, setHorizontalMargin] = useState<number>(10);
-  const [verticalMargin, setVerticalMargin] = useState<number>(4);
+  const [scrollSpeed, setScrollSpeed] = useState<number>(30);
+  const [fontSize, setFontSize] = useState<number>(40);
+  const [horizontalMargin, setHorizontalMargin] = useState<number>(20);
+  const [verticalMargin, setVerticalMargin] = useState<number>(18);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [isVoiceControlOn, setIsVoiceControlOn] = useState<boolean>(true);
   const [isProcessingAudio, setIsProcessingAudio] = useState<boolean>(false);
@@ -252,7 +252,6 @@ export default function Home() {
     if (!isPlaying || !displayRef.current) return;
 
     const currentDisplay = displayRef.current;
-    // Don't scroll if there is no scrollbar
     if (currentDisplay.scrollHeight <= currentDisplay.clientHeight) return;
 
     const pixelsPerSecond = scrollSpeed;
@@ -418,16 +417,16 @@ export default function Home() {
                                 <TooltipContent><p>Scroll Speed: {scrollSpeed.toFixed(0)}</p></TooltipContent>
                                </Tooltip>
                                <PopoverContent className={popoverContentClass}
-                                onPointerDownOutside={() => handleSave(setScrollSpeed, speedInput, 0, 100, setIsSpeedPopoverOpen)}>
+                                onPointerDownOutside={() => handleSave(setScrollSpeed, speedInput, 30, 100, setIsSpeedPopoverOpen)}>
                                     <Input
                                       id="speed-input"
                                       type="number"
                                       value={speedInput}
                                       onChange={(e) => setSpeedInput(e.target.value)}
-                                      min={0}
+                                      min={30}
                                       max={100}
                                       onKeyDown={(e) => {
-                                        if (e.key === 'Enter') handleSave(setScrollSpeed, speedInput, 0, 100, setIsSpeedPopoverOpen)
+                                        if (e.key === 'Enter') handleSave(setScrollSpeed, speedInput, 30, 100, setIsSpeedPopoverOpen)
                                       }}
                                     />
                                </PopoverContent>
@@ -435,7 +434,7 @@ export default function Home() {
                           <Slider
                             id="speed"
                             orientation="vertical"
-                            min={0}
+                            min={30}
                             max={100}
                             step={1}
                             value={[scrollSpeed]}
@@ -610,12 +609,15 @@ export default function Home() {
                   <div
                     className="w-full min-h-full flex justify-center items-center"
                      style={{
-                      padding: `${verticalMargin}% ${horizontalMargin}%`,
+                      paddingTop: `${verticalMargin}%`,
+                      paddingBottom: `${verticalMargin}%`,
+                      paddingLeft: `${horizontalMargin}%`,
+                      paddingRight: `${horizontalMargin}%`,
                     }}
                   >
                     <div
                       className={cn(
-                        "whitespace-pre-wrap break-words",
+                        "whitespace-pre-wrap break-words m-auto",
                         isHighContrast ? "text-white" : "text-foreground"
                       )}
                       style={{
@@ -635,7 +637,7 @@ export default function Home() {
                 size="icon"
                 className={cn(
                   "absolute bottom-4 right-4 z-10",
-                  isHighContrast && "bg-black text-white hover:bg-black/80"
+                  isHighContrast && "bg-black text-white hover:bg-black/80 hover:text-white"
                 )}
               >
                {isMaximized ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
