@@ -9,7 +9,7 @@ This guide will walk you through all the features of the AutoScroll Teleprompter
 ### Getting Started
 
 *   **Pasting Your Script**: The primary way to get your text into the prompter is by using the **Script Editor** at the bottom of the screen. Simply click into the text area and paste or type your script. The prompter display will update in real-time.
-*   **Importing from Google (Coming Soon)**: You can sign in with your Google account to enable import options from Google Docs, Slides, and Sheets. This feature is currently under development.
+*   **Importing from Google**: You can sign in with your Google account to enable import options. Currently, you can import from Google Docs, with Slides and Sheets support coming soon.
 
 ### Main Controls
 
@@ -26,7 +26,7 @@ Located in the top-left of the control panel:
 
 These are icon-based buttons in the control panel. Their color changes when active, and you can hover over them to see a tooltip explaining their function.
 
-*   **Voice Control (Mic Icon)**: When enabled (on by default), the app listens to your voice and automatically adjusts the scrolling speed to match your reading pace. If you pause, the scrolling slows down or stops. If you speak faster, it speeds up. When disabled, you must control the speed manually with the slider.
+*   **Voice Control (Mic Icon)**: When enabled (on by default), the app listens to your voice and automatically scrolls to keep the word you are currently speaking in the center of the screen. This provides a hands-free experience where the prompter perfectly follows your natural reading pace. When disabled, you must control scrolling manually with the speed slider.
 *   **High Contrast (Contrast Icon)**: Toggles the display between standard mode (black text on a light background) and high-contrast mode (white text on a black background). It is on by default for maximum readability.
 *   **Flip Horizontal (ArrowLeftRight Icon)**: Mirrors the prompter text horizontally. This is essential for use with physical teleprompter hardware that uses a mirror.
 *   **Flip Vertical (ArrowUpDown Icon)**: Flips the prompter text vertically.
