@@ -46,6 +46,7 @@ import {
   Text as TextIcon,
   StretchHorizontal,
   StretchVertical,
+  ScreenShare,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -95,7 +96,6 @@ export default function Home() {
 
   const [isPickerOpen, setIsPickerOpen] = useState(false);
 
-
   const displayRef = useRef<HTMLDivElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -104,12 +104,52 @@ export default function Home() {
   const animationFrameRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number | null>(null);
   const scrollSpeedRef = useRef(scrollSpeed);
+  
+  const prompterWindowRef = useRef<Window | null>(null);
+  const channelRef = useRef<BroadcastChannel | null>(null);
+
   useEffect(() => { scrollSpeedRef.current = scrollSpeed; }, [scrollSpeed]);
 
   useEffect(() => { setSpeedInput(String(scrollSpeed)) }, [scrollSpeed]);
   useEffect(() => { setFontSizeInput(String(fontSize)) }, [fontSize]);
   useEffect(() => { setHorizontalMarginInput(String(horizontalMargin)) }, [horizontalMargin]);
   useEffect(() => { setVerticalMarginInput(String(verticalMargin)) }, [verticalMargin]);
+
+  // Initialize broadcast channel for presenter mode
+  useEffect(() => {
+    channelRef.current = new BroadcastChannel("teleprompter_channel");
+    
+    const handleUnload = () => {
+      prompterWindowRef.current?.close();
+    };
+    window.addEventListener("beforeunload", handleUnload);
+
+    return () => {
+      channelRef.current?.close();
+      window.removeEventListener("beforeunload", handleUnload);
+    };
+  }, []);
+
+  // Sync settings with localStorage and presenter window
+  useEffect(() => {
+    const settings = {
+      text,
+      fontSize,
+      horizontalMargin,
+      verticalMargin,
+      isHighContrast,
+      isFlippedHorizontally,
+      isFlippedVertically,
+      scrollSpeed,
+    };
+    try {
+        localStorage.setItem("teleprompter_settings", JSON.stringify(settings));
+        channelRef.current?.postMessage({ type: "settings_update", payload: settings });
+    } catch (e) {
+        console.error("Could not write to localStorage", e);
+    }
+  }, [text, fontSize, horizontalMargin, verticalMargin, isHighContrast, isFlippedHorizontally, isFlippedVertically, scrollSpeed]);
+
 
   const handleSave = (setter: React.Dispatch<React.SetStateAction<number>>, value: string, min: number, max: number, popoverSetter: React.Dispatch<React.SetStateAction<boolean>>) => {
     const numValue = parseInt(value, 10);
@@ -184,6 +224,14 @@ export default function Home() {
     }
   };
 
+  const handlePresent = () => {
+    if (prompterWindowRef.current && !prompterWindowRef.current.closed) {
+      prompterWindowRef.current.focus();
+    } else {
+      prompterWindowRef.current = window.open("/presenter", "_blank");
+    }
+  };
+
   const blobToDataUri = (blob: Blob): Promise<string> => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -221,6 +269,7 @@ export default function Home() {
       const targetWord = document.getElementById(`word-${lastSpokenWordIndex}`);
       if (targetWord) {
         targetWord.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        channelRef.current?.postMessage({ type: 'scroll_to_word', payload: { wordIndex: lastSpokenWordIndex } });
       }
 
     } catch (error: any) {
@@ -359,15 +408,18 @@ export default function Home() {
   }, [isMaximized, isSpeedPopoverOpen, isFontSizePopoverOpen, isHorizontalMarginPopoverOpen, isVerticalMarginPopoverOpen]);
 
   const handlePlayPause = () => {
-    if (!isPlaying) {
+    const newIsPlaying = !isPlaying;
+    if (newIsPlaying) {
       setIsMaximized(true);
       if (displayRef.current) {
-        if (displayRef.current.scrollTop + displayRef.current.clientHeight >= displayRef.current.scrollHeight -1) {
+        if (displayRef.current.scrollTop + displayRef.current.clientHeight >= displayRef.current.scrollHeight - 1) {
           displayRef.current.scrollTop = 0;
+          channelRef.current?.postMessage({ type: "reset" });
         }
       }
     }
-    setIsPlaying(!isPlaying);
+    setIsPlaying(newIsPlaying);
+    channelRef.current?.postMessage({ type: newIsPlaying ? "play" : "pause" });
   };
   
   const popoverContentClass = "w-[150px] p-2";
@@ -435,9 +487,44 @@ export default function Home() {
                             </TooltipTrigger>
                             <TooltipContent><p>Voice Control</p></TooltipContent>
                         </Tooltip>
+                         <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={handlePresent}>
+                                    <ScreenShare />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Project to second screen</p></TooltipContent>
+                        </Tooltip>
                     </div>
                      {isProcessingAudio && <p className="text-sm text-muted-foreground text-center">Syncing to your voice...</p>}
 
+                    <div className="grid grid-cols-2 gap-4 pt-2 border-t w-full">
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={() => setIsHighContrast(!isHighContrast)}>
+                                    <Contrast className={cn(isHighContrast && "text-accent")} />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>High Contrast</p></TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={() => setIsFlippedHorizontally(!isFlippedHorizontally)}>
+                                    <ArrowLeftRight className={cn(isFlippedHorizontally && "text-accent")} />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Flip Horizontal</p></TooltipContent>
+                        </Tooltip>
+                         <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={() => setIsFlippedVertically(!isFlippedVertically)}>
+                                    <ArrowUpDown className={cn(isFlippedVertically && "text-accent")} />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Flip Vertical</p></TooltipContent>
+                        </Tooltip>
+                    </div>
+                     
                     <div className="flex items-start justify-between pt-2 border-t w-full">
                         <div className="flex flex-col items-center gap-3">
                           <Popover open={isSpeedPopoverOpen} onOpenChange={setIsSpeedPopoverOpen}>
@@ -666,7 +753,7 @@ export default function Home() {
                 </div>
               </CardContent>
             </Card>
-            <div className="absolute bottom-4 right-4 z-10 flex flex-col-reverse items-end gap-2">
+            <div className="absolute bottom-4 right-4 z-10">
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -675,6 +762,7 @@ export default function Home() {
                       variant="ghost"
                       size="icon"
                       className={cn(
+                        "opacity-60",
                         isHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : ""
                       )}
                     >
@@ -682,33 +770,6 @@ export default function Home() {
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="left"><p>{isMaximized ? 'Exit Full Screen' : 'Full Screen'}</p></TooltipContent>
-                </Tooltip>
-
-                 <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" onClick={() => setIsFlippedVertically(!isFlippedVertically)} className={cn(isHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : "")}>
-                            <ArrowUpDown className={cn(isFlippedVertically && "text-accent")} />
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="left"><p>Flip Vertical</p></TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" onClick={() => setIsFlippedHorizontally(!isFlippedHorizontally)} className={cn(isHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : "")}>
-                            <ArrowLeftRight className={cn(isFlippedHorizontally && "text-accent")} />
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="left"><p>Flip Horizontal</p></TooltipContent>
-                </Tooltip>
-                
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" onClick={() => setIsHighContrast(!isHighContrast)} className={cn(isHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : "")}>
-                            <Contrast className={cn(isHighContrast && "text-accent")} />
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="left"><p>High Contrast</p></TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
