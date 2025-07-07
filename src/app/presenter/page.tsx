@@ -186,8 +186,8 @@ export default function PresenterPage() {
       <div
         className="w-full min-h-full flex justify-center m-auto"
         style={{
-          paddingTop: `${settings.verticalMargin}%`,
-          paddingBottom: `calc(100vh - ${settings.verticalMargin}%)`,
+          paddingTop: `${settings.verticalMargin}vh`,
+          paddingBottom: '100vh',
         }}
       >
         <div

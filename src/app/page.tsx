@@ -1640,7 +1640,7 @@ export default function Home() {
                                     <Button variant="ghost" size="sm" className="w-7 h-7 p-0"><StretchVertical className="h-4 w-4"/></Button>
                                   </PopoverTrigger>
                                 </TooltipTrigger>
-                                <TooltipContent><p>Vertical Margin: {verticalMargin}%</p></TooltipContent>
+                                <TooltipContent><p>Vertical Margin: {verticalMargin}vh</p></TooltipContent>
                                </Tooltip>
                                <PopoverContent className={popoverContentClass}
                                 onPointerDownOutside={() => handleSave(setVerticalMargin, verticalMarginInput, 0, 50, setIsVerticalMarginPopoverOpen)}>
@@ -1710,10 +1710,13 @@ export default function Home() {
             <Card
               className={cn(
                 "h-full flex flex-col",
-                isMaximized ? "rounded-none border-none" : "rounded-lg"
+                isMaximized && "rounded-none border-none"
               )}
             >
-              <CardContent className="p-0 flex-grow overflow-hidden rounded-lg relative">
+              <CardContent className={cn(
+                  "p-0 flex-grow overflow-hidden relative",
+                  isMaximized ? "rounded-none" : "rounded-lg"
+                )}>
                 <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
                   <TooltipProvider>
                     <Tooltip>
@@ -1734,7 +1737,7 @@ export default function Home() {
                   </TooltipProvider>
 
                   {upcomingCue !== null && (
-                    <div className="h-2.5 w-2.5 rounded-full bg-green-500 pointer-events-none" />
+                    <div className="h-2.5 w-2.5 rounded-full bg-green-500 pointer-events-none animate-in fade-in" />
                   )}
                 </div>
                 
@@ -1755,8 +1758,8 @@ export default function Home() {
                     <div
                       className="w-full min-h-full flex justify-center m-auto"
                        style={{
-                        paddingTop: `${verticalMargin}%`,
-                        paddingBottom: `calc(100vh - ${verticalMargin}%)`,
+                        paddingTop: `${verticalMargin}vh`,
+                        paddingBottom: '100vh',
                       }}
                     >
                       <div
@@ -1808,8 +1811,8 @@ export default function Home() {
                         <div
                           className="w-full min-h-full flex justify-center m-auto"
                            style={{
-                            paddingTop: `${verticalMargin}%`,
-                            paddingBottom: `calc(100vh - ${verticalMargin}%)`,
+                            paddingTop: `${verticalMargin}vh`,
+                            paddingBottom: '100vh',
                           }}
                         >
                           <div
