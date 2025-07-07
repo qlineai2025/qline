@@ -100,7 +100,7 @@ const DEFAULT_SETTINGS = {
   scrollSpeed: 30,
   fontSize: 40,
   horizontalMargin: 20,
-  verticalMargin: 18,
+  verticalMargin: 40,
   startDelay: 3,
 };
 
@@ -1619,16 +1619,16 @@ export default function Home() {
                                 <TooltipContent><p>Vertical Margin: {verticalMargin}%</p></TooltipContent>
                                </Tooltip>
                                <PopoverContent className={popoverContentClass}
-                                onPointerDownOutside={() => handleSave(setVerticalMargin, verticalMarginInput, 0, 40, setIsVerticalMarginPopoverOpen)}>
+                                onPointerDownOutside={() => handleSave(setVerticalMargin, verticalMarginInput, 20, 60, setIsVerticalMarginPopoverOpen)}>
                                     <Input
                                       id="v-margin-input"
                                       type="number"
                                       value={verticalMarginInput}
                                       onChange={(e) => setVerticalMarginInput(e.target.value)}
-                                      min={0}
-                                      max={40}
+                                      min={20}
+                                      max={60}
                                       onKeyDown={(e) => {
-                                        if (e.key === 'Enter') handleSave(setVerticalMargin, verticalMarginInput, 0, 40, setIsVerticalMarginPopoverOpen);
+                                        if (e.key === 'Enter') handleSave(setVerticalMargin, verticalMarginInput, 20, 60, setIsVerticalMarginPopoverOpen);
                                       }}
                                     />
                                </PopoverContent>
@@ -1636,8 +1636,8 @@ export default function Home() {
                           <Slider
                             id="vertical-margin"
                             orientation="vertical"
-                            min={0}
-                            max={40}
+                            min={20}
+                            max={60}
                             step={1}
                             value={[verticalMargin]}
                             onValueChange={(value) => setVerticalMargin(value[0])}
@@ -1705,10 +1705,10 @@ export default function Home() {
                     }}
                   >
                     <div
-                      className="w-full min-h-full flex justify-center items-center m-auto"
+                      className="w-full min-h-full flex justify-center m-auto"
                        style={{
                         paddingTop: `${verticalMargin}%`,
-                        paddingBottom: `${verticalMargin}%`,
+                        paddingBottom: '20%',
                       }}
                     >
                       <div
@@ -1758,10 +1758,10 @@ export default function Home() {
                         }}
                       >
                         <div
-                          className="w-full min-h-full flex justify-center items-center m-auto"
+                          className="w-full min-h-full flex justify-center m-auto"
                            style={{
                             paddingTop: `${verticalMargin}%`,
-                            paddingBottom: `${verticalMargin}%`,
+                            paddingBottom: '20%',
                           }}
                         >
                           <div

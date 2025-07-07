@@ -23,7 +23,7 @@ const DEFAULT_SETTINGS: PresenterSettings = {
   text: 'Waiting for content from main window...',
   fontSize: 40,
   horizontalMargin: 20,
-  verticalMargin: 18,
+  verticalMargin: 40,
   isHighContrast: true,
   isFlippedHorizontally: false,
   isFlippedVertically: false,
@@ -161,10 +161,10 @@ export default function PresenterPage() {
                 }}
             >
                 <div
-                className="w-full min-h-full flex justify-center items-center m-auto"
+                className="w-full min-h-full flex justify-center m-auto"
                     style={{
                     paddingTop: `${settings.verticalMargin}%`,
-                    paddingBottom: `${settings.verticalMargin}%`,
+                    paddingBottom: '20%',
                 }}
                 >
                 <div
