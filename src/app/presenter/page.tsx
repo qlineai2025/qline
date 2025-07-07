@@ -28,7 +28,7 @@ const DEFAULT_SETTINGS: PresenterSettings = {
   isHighContrast: true,
   isFlippedHorizontally: false,
   isFlippedVertically: false,
-  scrollSpeed: 30,
+  scrollSpeed: 35,
   prompterMode: 'text',
   slides: [],
   currentSlideIndex: 0,
@@ -71,6 +71,18 @@ export default function PresenterPage() {
   const animationFrameRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number | null>(null);
   const scrollSpeedRef = useRef(settings.scrollSpeed);
+
+  const mapSliderToEffectiveSpeed = (sliderValue: number): number => {
+    // This function maps the slider value (30-100) to an effective scroll speed.
+    // Based on user request:
+    // - Slider value 35 should map to an effective speed of 10.
+    // - Slider value 100 should map to an effective speed of 50 (5x the speed at 35).
+    // This creates a linear mapping.
+    // Points: (35, 10) and (100, 50)
+    const slope = (50 - 10) / (100 - 35); // 40 / 65 = 8 / 13
+    const yIntercept = 10 - slope * 35; // 10 - (8/13)*35 = -150/13
+    return slope * sliderValue + yIntercept;
+  };
 
   useEffect(() => { scrollSpeedRef.current = settings.scrollSpeed; }, [settings.scrollSpeed]);
   
@@ -135,7 +147,8 @@ export default function PresenterPage() {
     if (displayRef.current) {
       const currentDisplay = displayRef.current;
       if (currentDisplay.scrollHeight > currentDisplay.clientHeight) {
-        const scrollAmount = (scrollSpeedRef.current / 60) * (deltaTime / (1000/60));
+        const effectiveSpeed = mapSliderToEffectiveSpeed(scrollSpeedRef.current);
+        const scrollAmount = (effectiveSpeed / 60) * (deltaTime / (1000/60));
         currentDisplay.scrollTop += scrollAmount;
       }
       
