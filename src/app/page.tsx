@@ -185,7 +185,8 @@ export default function Home() {
   const [isMicPickerOpen, setIsMicPickerOpen] = useState(false);
 
   const [videoCountdown, setVideoCountdown] = useState<number | null>(null);
-  const [triggeredVideoCues, setTriggeredVideoCues] = useState<number[]>([]);
+  const [pauseCountdown, setPauseCountdown] = useState<number | null>(null);
+  const [triggeredCues, setTriggeredCues] = useState<number[]>([]);
 
   const displayRef = useRef<HTMLDivElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -193,11 +194,12 @@ export default function Home() {
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const videoCountdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pauseCountdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   const animationFrameRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number | null>(null);
   const scrollSpeedRef = useRef(scrollSpeed);
-  const wasPlayingBeforeVideoRef = useRef(false);
+  const wasPlayingBeforeCueRef = useRef(false);
   
   const prompterWindowRef = useRef<Window | null>(null);
   const channelRef = useRef<BroadcastChannel | null>(null);
@@ -216,12 +218,10 @@ export default function Home() {
       return;
     }
     try {
-      // Must request permission to get device labels.
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const devices = await navigator.mediaDevices.enumerateDevices();
       const audioInputs = devices.filter(d => d.kind === 'audioinput');
       setAudioDevices(audioInputs);
-      // Stop the tracks immediately after getting permission, we don't need the stream itself.
       stream.getTracks().forEach(track => track.stop());
     } catch (err) {
       console.error("Could not get audio devices:", err);
@@ -230,13 +230,12 @@ export default function Home() {
         title: "Microphone Access Denied",
         description: "Cannot list microphones without permission.",
       });
-      setIsMicPickerOpen(false); // Close popover if permission is denied
+      setIsMicPickerOpen(false);
     }
   }, [toast]);
 
   useEffect(() => {
     const handleDeviceChange = () => {
-      // Refetch devices if the list changes while the picker is open
       if (isMicPickerOpen) {
           getAudioDevices();
       }
@@ -252,7 +251,6 @@ export default function Home() {
   }, [getAudioDevices, isMicPickerOpen]);
 
 
-  // Load saved settings from localStorage on mount
   useEffect(() => {
     try {
       const storedSettings = localStorage.getItem("teleprompter_presets");
@@ -264,7 +262,6 @@ export default function Home() {
     }
   }, []);
 
-  // Save settings to localStorage whenever they change
   useEffect(() => {
     try {
       localStorage.setItem("teleprompter_presets", JSON.stringify(savedSettings));
@@ -273,14 +270,12 @@ export default function Home() {
     }
   }, [savedSettings]);
   
-  // Autofocus search input when load popover opens
   useEffect(() => {
     if (isLoadPopoverOpen) {
       setTimeout(() => searchInputRef.current?.focus(), 100);
     }
   }, [isLoadPopoverOpen]);
 
-  // Initialize broadcast channel for presenter mode
   useEffect(() => {
     channelRef.current = new BroadcastChannel("teleprompter_channel");
     
@@ -295,7 +290,6 @@ export default function Home() {
     };
   }, []);
   
-  // Check if presenter window is closed
   useEffect(() => {
     if (!isPresenterModeActive) return;
 
@@ -309,7 +303,6 @@ export default function Home() {
     return () => clearInterval(intervalId);
   }, [isPresenterModeActive]);
 
-  // Sync settings with localStorage and presenter window
   useEffect(() => {
     const settings = {
       text,
@@ -623,30 +616,47 @@ export default function Home() {
     }
   };
 
-  const videoCuePositions = useMemo(() => {
-    if (prompterMode !== 'slides' || !text) return [];
-    
-    const words = text.split(/(\s+)/).filter(w => w.trim().length > 0);
-    const cues: { wordIndex: number, videoIndex: number }[] = [];
+  const scriptCues = useMemo(() => {
+    if (!text) return [];
+
+    const cues: { wordIndex: number; type: 'video' | 'pause'; duration: number; videoIndex?: number }[] = [];
+    const regex = /(\[PLAY VIDEO \d+\]|\[PAUSE \d+ SECONDS\])/g;
     let cumulativeWordCount = 0;
 
-    text.split(/(\[PLAY VIDEO \d+])/g).forEach(part => {
-        const cueMatch = part.match(/\[PLAY VIDEO (\d+)]/);
-        if (cueMatch) {
-            cues.push({
-                wordIndex: cumulativeWordCount,
-                videoIndex: parseInt(cueMatch[1], 10) - 1
-            });
+    text.split(regex).forEach(part => {
+        const videoMatch = part.match(/\[PLAY VIDEO (\d+)\]/);
+        const pauseMatch = part.match(/\[PAUSE (\d+) SECONDS\]/);
+
+        if (videoMatch && prompterMode === 'slides') {
+            const videoIndex = parseInt(videoMatch[1], 10) - 1;
+            const video = slides[currentSlideIndex]?.videos[videoIndex];
+            if (video) {
+                cues.push({
+                    wordIndex: cumulativeWordCount,
+                    type: 'video',
+                    duration: video.duration,
+                    videoIndex: videoIndex
+                });
+            }
+        } else if (pauseMatch) {
+            const duration = parseInt(pauseMatch[1], 10);
+            if (!isNaN(duration)) {
+                 cues.push({
+                    wordIndex: cumulativeWordCount,
+                    type: 'pause',
+                    duration: duration
+                });
+            }
         } else {
             cumulativeWordCount += part.split(/(\s+)/).filter(w => w.trim().length > 0).length;
         }
     });
     return cues;
-  }, [text, prompterMode]);
+  }, [text, prompterMode, slides, currentSlideIndex]);
 
   useEffect(() => {
-    setTriggeredVideoCues([]);
-  }, [currentSlideIndex]);
+    setTriggeredCues([]);
+  }, [currentSlideIndex, text]);
 
   const updatePositionFromSpeech = useCallback(async () => {
     if (audioChunksRef.current.length === 0) return;
@@ -773,20 +783,22 @@ export default function Home() {
               } else {
                 if (isPlaying) stopPlayback();
               }
-            } else if (prompterMode === 'slides' && slideDisplayMode === 'notes' && lastSpokenWordIndex !== null) {
-                const triggeredCue = videoCuePositions.find(cue => 
-                    lastSpokenWordIndex >= cue.wordIndex && !triggeredVideoCues.includes(cue.videoIndex)
+            } else if (lastSpokenWordIndex !== null) {
+                const triggeredCue = scriptCues.find(cue => 
+                    lastSpokenWordIndex >= cue.wordIndex && !triggeredCues.includes(cue.wordIndex)
                 );
 
                 if (triggeredCue) {
-                    const video = slides[currentSlideIndex]?.videos[triggeredCue.videoIndex];
-                    if (video) {
-                        wasPlayingBeforeVideoRef.current = isPlaying;
-                        stopPlayback();
-                        setVideoCountdown(video.duration);
-                        setTriggeredVideoCues(prev => [...prev, triggeredCue.videoIndex]);
-                        return;
+                    wasPlayingBeforeCueRef.current = isPlaying;
+                    stopPlayback();
+                    setTriggeredCues(prev => [...prev, triggeredCue.wordIndex]);
+
+                    if (triggeredCue.type === 'video') {
+                        setVideoCountdown(triggeredCue.duration);
+                    } else if (triggeredCue.type === 'pause') {
+                        setPauseCountdown(triggeredCue.duration);
                     }
+                    return;
                 }
             }
 
@@ -808,7 +820,7 @@ export default function Home() {
     } finally {
       setIsProcessingAudio(false);
     }
-  }, [text, toast, prompterMode, slideDisplayMode, currentSlideIndex, slides, handleNextSlide, handlePrevSlide, isPlaying, isLogging, startPlayback, stopPlayback, countdown, takeNumber, videoCuePositions, triggeredVideoCues]);
+  }, [text, toast, prompterMode, slideDisplayMode, currentSlideIndex, slides, handleNextSlide, handlePrevSlide, isPlaying, isLogging, startPlayback, stopPlayback, countdown, takeNumber, scriptCues, triggeredCues]);
 
   const startRecording = useCallback(() => {
     const audioConstraints = {
@@ -893,11 +905,11 @@ export default function Home() {
     }
   }, [text]);
 
-  // Effect for cleaning up countdown interval
   useEffect(() => {
     return () => {
         if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
         if (videoCountdownIntervalRef.current) clearInterval(videoCountdownIntervalRef.current);
+        if (pauseCountdownIntervalRef.current) clearInterval(pauseCountdownIntervalRef.current);
     };
   }, []);
 
@@ -910,7 +922,7 @@ export default function Home() {
         setVideoCountdown(prev => {
           if (prev === null || prev <= 1) {
             if (videoCountdownIntervalRef.current) clearInterval(videoCountdownIntervalRef.current);
-            if (wasPlayingBeforeVideoRef.current) {
+            if (wasPlayingBeforeCueRef.current) {
               startPlayback();
             }
             return null;
@@ -920,7 +932,7 @@ export default function Home() {
       }, 1000);
     } else if (videoCountdown === 0) {
       setVideoCountdown(null);
-      if (wasPlayingBeforeVideoRef.current) {
+      if (wasPlayingBeforeCueRef.current) {
         startPlayback();
       }
     }
@@ -928,6 +940,35 @@ export default function Home() {
       if (videoCountdownIntervalRef.current) clearInterval(videoCountdownIntervalRef.current);
     };
   }, [videoCountdown, startPlayback]);
+
+  useEffect(() => {
+    if (pauseCountdownIntervalRef.current) {
+      clearInterval(pauseCountdownIntervalRef.current);
+    }
+    if (pauseCountdown !== null && pauseCountdown > 0) {
+      pauseCountdownIntervalRef.current = setInterval(() => {
+        setPauseCountdown(prev => {
+          if (prev === null || prev <= 1) {
+            if (pauseCountdownIntervalRef.current) clearInterval(pauseCountdownIntervalRef.current);
+            if (wasPlayingBeforeCueRef.current) {
+              startPlayback();
+            }
+            return null;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else if (pauseCountdown === 0) {
+      setPauseCountdown(null);
+      if (wasPlayingBeforeCueRef.current) {
+        startPlayback();
+      }
+    }
+    return () => {
+      if (pauseCountdownIntervalRef.current) clearInterval(pauseCountdownIntervalRef.current);
+    };
+  }, [pauseCountdown, startPlayback]);
+
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -952,14 +993,17 @@ export default function Home() {
   const popoverContentClass = "w-[150px] p-2";
   
   const processedText = useCallback(() => {
-    const parts = text.split(/(\[PLAY VIDEO \d+])/g);
+    const regex = /(\[PLAY VIDEO \d+\]|\[PAUSE \d+ SECONDS\])/g;
+    const parts = text.split(regex);
     const elements: React.ReactNode[] = [];
     let wordCount = 0;
     let partKey = 0;
 
     parts.forEach((part) => {
-        const cueMatch = part.match(/\[PLAY VIDEO (\d+)]/);
-        if (cueMatch) {
+        const videoMatch = part.match(/\[PLAY VIDEO (\d+)\]/);
+        const pauseMatch = part.match(/\[PAUSE \d+ SECONDS\]/);
+
+        if (videoMatch || pauseMatch) {
             // This part is the cue, we render nothing visible for it
         } else {
             const words = part.split(/(\s+)/);
@@ -1111,7 +1155,6 @@ export default function Home() {
     }
   };
 
-  // Effect to clear loadedSettingName if settings are changed from a loaded preset
   useEffect(() => {
     if (!loadedSettingName) return;
 
@@ -1130,11 +1173,11 @@ export default function Home() {
 
   const handleToggleLogging = () => {
     const nextState = !isLogging;
-    if (nextState) { // Turning logging ON
+    if (nextState) { 
         toast({ title: "Command logging enabled." });
-        setCommandLog([]); // Clear previous log and start fresh
-        setTakeNumber(1); // Reset to Take 1
-        setHasStartedPlayback(false); // Reset playback state for new logging session
+        setCommandLog([]); 
+        setTakeNumber(1); 
+        setHasStartedPlayback(false); 
     } else {
         toast({ title: "Command logging disabled." });
     }
@@ -1159,12 +1202,12 @@ export default function Home() {
             `${log.take},${log.timestamp.toISOString()},${log.command},"${log.details.replace(/"/g, '""')}"`
         ).join('\n');
         content = header + rows;
-    } else { // srt
+    } else { 
         fileExtension = 'srt';
         mimeType = 'application/x-subrip;charset=utf-8;';
         content = commandLog.map((log, index) => {
             const startTime = log.timestamp;
-            const endTime = new Date(startTime.getTime() + 2000); // Assume 2s duration for the command display
+            const endTime = new Date(startTime.getTime() + 2000); 
             
             const toSrtTime = (date: Date) => {
                 const h = String(date.getUTCHours()).padStart(2, '0');
@@ -1190,7 +1233,7 @@ export default function Home() {
   };
 
 
-  const playPauseDisabled = (prompterMode === 'slides' && slideDisplayMode === 'slide') || videoCountdown !== null;
+  const playPauseDisabled = (prompterMode === 'slides' && slideDisplayMode === 'slide') || videoCountdown !== null || pauseCountdown !== null;
   const voiceControlDisabled = playPauseDisabled;
   const speedSliderDisabled = isVoiceControlOn || playPauseDisabled;
 
@@ -1750,9 +1793,9 @@ export default function Home() {
                 )}
               </CardContent>
             </Card>
-             {(countdown !== null || videoCountdown !== null) && (
+             {(countdown !== null || videoCountdown !== null || pauseCountdown !== null) && (
                 <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/30 pointer-events-none">
-                    <span className="text-white font-bold text-9xl drop-shadow-lg animate-ping">{countdown ?? videoCountdown}</span>
+                    <span className="text-white font-bold text-9xl drop-shadow-lg animate-ping">{countdown ?? videoCountdown ?? pauseCountdown}</span>
                 </div>
             )}
             <div className="absolute bottom-4 right-4 z-10 flex flex-col items-end gap-2">
