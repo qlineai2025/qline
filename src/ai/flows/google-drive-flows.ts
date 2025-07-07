@@ -5,20 +5,20 @@
  * - listGoogleDocs - Fetches a list of Google Docs from the user's Drive.
  * - getGoogleDocContent - Fetches and parses the text content of a specific Google Doc.
  * - listGoogleSlides - Fetches a list of Google Slides from the user's Drive.
- * - getGoogleSlidesContent - Fetches image URLs and speaker notes for all slides in a presentation.
+ * - getGoogleSlidesContent - Fetches image URLs, speaker notes, and video durations for all slides in a presentation.
  * - GoogleDoc - The type for a single Google Doc file.
  * - ListGoogleDocsInput - The input type for the listGoogleDocs function.
  * - GetGoogleDocContentInput - The input type for the getGoogleDocContent function.
  * - GoogleSlide - The type for a single Google Slide file.
  * - ListGoogleSlidesInput - The input type for the listGoogleSlides function.
  * - GetGoogleSlidesContentInput - The input type for the getGoogleSlidesContent function.
- * - GoogleSlideContent - The type for a single slide's content (image URL and speaker notes).
+ * - GoogleSlideContent - The type for a single slide's content (image URL, notes, and video data).
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { google } from 'googleapis';
-import type {slides_v1} from 'googleapis';
+import type { slides_v1, youtube_v3 } from 'googleapis';
 
 // Schema for a single Google Doc file
 const GoogleDocSchema = z.object({
@@ -55,10 +55,17 @@ const ListGoogleSlidesInputSchema = z.object({
 });
 export type ListGoogleSlidesInput = z.infer<typeof ListGoogleSlidesInputSchema>;
 
+// Schema for embedded video details on a slide
+const VideoDetailsSchema = z.object({
+  elementId: z.string().describe("The object ID of the video element on the slide."),
+  duration: z.number().describe("The duration of the video in seconds.")
+});
+
 // Schema for the content of a single Google Slide
 const GoogleSlideContentSchema = z.object({
   imageUrl: z.string(),
   speakerNotes: z.string(),
+  videos: z.array(VideoDetailsSchema).describe("A list of videos on the slide with their durations.")
 });
 export type GoogleSlideContent = z.infer<typeof GoogleSlideContentSchema>;
 
@@ -216,6 +223,26 @@ const extractText = (textElements: slides_v1.Schema$TextElement[] | undefined): 
 };
 
 /**
+ * Parses an ISO 8601 duration string (e.g., "PT2M30S") into seconds.
+ * @param durationString The ISO 8601 duration string.
+ * @returns The total duration in seconds.
+ */
+const parseISO8601Duration = (durationString: string): number => {
+  const regex = /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/;
+  const matches = durationString.match(regex);
+
+  if (!matches) {
+    return 0;
+  }
+
+  const hours = parseInt(matches[1] || '0');
+  const minutes = parseInt(matches[2] || '0');
+  const seconds = parseInt(matches[3] || '0');
+
+  return (hours * 3600) + (minutes * 60) + seconds;
+};
+
+/**
  * Fetches the image URLs and speaker notes of all slides in a presentation.
  */
 export const getGoogleSlidesContent = ai.defineFlow(
@@ -228,10 +255,12 @@ export const getGoogleSlidesContent = ai.defineFlow(
     try {
       const auth = getAuthenticatedClient(input.accessToken);
       const slidesApi = google.slides({ version: 'v1', auth });
+      const driveApi = google.drive({ version: 'v3', auth });
+      const youtubeApi = google.youtube({ version: 'v3', auth });
 
       const presentation = await slidesApi.presentations.get({
         presentationId: input.presentationId,
-        fields: 'slides(objectId,slideProperties.notesPage),notesMasters',
+        fields: 'slides(objectId,slideProperties.notesPage,pageElements(objectId,video(id,source)))',
       });
       
       const slides = presentation.data.slides;
@@ -262,8 +291,49 @@ export const getGoogleSlidesContent = ai.defineFlow(
             const notesBody = notesPage.data.pageElements?.find(el => el.shape?.placeholder?.type === 'BODY');
             speakerNotes = extractText(notesBody?.shape?.text?.textElements);
           }
+
+          // Get video details
+          const videosOnSlide = slide.pageElements?.filter(el => el.video) || [];
+          const videoDetailsPromises = videosOnSlide.map(async (videoElement): Promise<z.infer<typeof VideoDetailsSchema> | null> => {
+            const video = videoElement.video!;
+            let durationInSeconds = 0;
+
+            try {
+              if (video.source === 'YOUTUBE' && video.id) {
+                const videoResponse = await youtubeApi.videos.list({
+                  part: ['contentDetails'],
+                  id: [video.id],
+                });
+                const duration = videoResponse.data.items?.[0]?.contentDetails?.duration;
+                if (duration) {
+                  durationInSeconds = parseISO8601Duration(duration);
+                }
+              } else if (video.source === 'DRIVE' && video.id) {
+                const fileResponse = await driveApi.files.get({
+                  fileId: video.id,
+                  fields: 'videoMediaMetadata(durationMillis)',
+                });
+                const durationMillis = fileResponse.data.videoMediaMetadata?.durationMillis;
+                if (durationMillis) {
+                  durationInSeconds = Math.round(Number(durationMillis) / 1000);
+                }
+              }
+            } catch (e) {
+                console.warn(`Could not fetch duration for video ${video.id} on slide ${slide.objectId}. Check API permissions.`, e);
+            }
+
+            if (durationInSeconds > 0) {
+              return {
+                elementId: videoElement.objectId!,
+                duration: durationInSeconds
+              };
+            }
+            return null;
+          });
+
+          const videos = (await Promise.all(videoDetailsPromises)).filter((v): v is z.infer<typeof VideoDetailsSchema> => v !== null);
           
-          return { imageUrl, speakerNotes };
+          return { imageUrl, speakerNotes, videos };
         })
       );
       

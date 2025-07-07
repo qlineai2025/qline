@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { controlTeleprompter } from "@/ai/flows/teleprompter-control-flow.ts";
 import { assistWithScript, ScriptAssistantCommand } from "@/ai/flows/script-assistant-flow.ts";
 import { cn } from "@/lib/utils";
@@ -184,15 +184,20 @@ export default function Home() {
   const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
   const [isMicPickerOpen, setIsMicPickerOpen] = useState(false);
 
+  const [videoCountdown, setVideoCountdown] = useState<number | null>(null);
+  const [triggeredVideoCues, setTriggeredVideoCues] = useState<number[]>([]);
+
   const displayRef = useRef<HTMLDivElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const videoCountdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   const animationFrameRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number | null>(null);
   const scrollSpeedRef = useRef(scrollSpeed);
+  const wasPlayingBeforeVideoRef = useRef(false);
   
   const prompterWindowRef = useRef<Window | null>(null);
   const channelRef = useRef<BroadcastChannel | null>(null);
@@ -511,8 +516,9 @@ export default function Home() {
     }
     setCountdown(null);
     setIsPlaying(false);
+    stopScroll();
     channelRef.current?.postMessage({ type: "pause" });
-  }, []);
+  }, [stopScroll]);
 
   const startPlayback = useCallback(() => {
     if (!hasStartedPlayback) {
@@ -616,6 +622,31 @@ export default function Home() {
         startPlayback();
     }
   };
+
+  const videoCuePositions = useMemo(() => {
+    if (prompterMode !== 'slides' || !text) return [];
+    
+    const words = text.split(/(\s+)/).filter(w => w.trim().length > 0);
+    const cues: { wordIndex: number, videoIndex: number }[] = [];
+    let cumulativeWordCount = 0;
+
+    text.split(/(\[PLAY VIDEO \d+])/g).forEach(part => {
+        const cueMatch = part.match(/\[PLAY VIDEO (\d+)]/);
+        if (cueMatch) {
+            cues.push({
+                wordIndex: cumulativeWordCount,
+                videoIndex: parseInt(cueMatch[1], 10) - 1
+            });
+        } else {
+            cumulativeWordCount += part.split(/(\s+)/).filter(w => w.trim().length > 0).length;
+        }
+    });
+    return cues;
+  }, [text, prompterMode]);
+
+  useEffect(() => {
+    setTriggeredVideoCues([]);
+  }, [currentSlideIndex]);
 
   const updatePositionFromSpeech = useCallback(async () => {
     if (audioChunksRef.current.length === 0) return;
@@ -742,6 +773,21 @@ export default function Home() {
               } else {
                 if (isPlaying) stopPlayback();
               }
+            } else if (prompterMode === 'slides' && slideDisplayMode === 'notes' && lastSpokenWordIndex !== null) {
+                const triggeredCue = videoCuePositions.find(cue => 
+                    lastSpokenWordIndex >= cue.wordIndex && !triggeredVideoCues.includes(cue.videoIndex)
+                );
+
+                if (triggeredCue) {
+                    const video = slides[currentSlideIndex]?.videos[triggeredCue.videoIndex];
+                    if (video) {
+                        wasPlayingBeforeVideoRef.current = isPlaying;
+                        stopPlayback();
+                        setVideoCountdown(video.duration);
+                        setTriggeredVideoCues(prev => [...prev, triggeredCue.videoIndex]);
+                        return;
+                    }
+                }
             }
 
             const targetWord = document.getElementById(`word-${lastSpokenWordIndex}`);
@@ -762,7 +808,7 @@ export default function Home() {
     } finally {
       setIsProcessingAudio(false);
     }
-  }, [text, toast, prompterMode, slideDisplayMode, currentSlideIndex, slides, handleNextSlide, handlePrevSlide, isPlaying, isLogging, startPlayback, stopPlayback, countdown, takeNumber]);
+  }, [text, toast, prompterMode, slideDisplayMode, currentSlideIndex, slides, handleNextSlide, handlePrevSlide, isPlaying, isLogging, startPlayback, stopPlayback, countdown, takeNumber, videoCuePositions, triggeredVideoCues]);
 
   const startRecording = useCallback(() => {
     const audioConstraints = {
@@ -850,11 +896,38 @@ export default function Home() {
   // Effect for cleaning up countdown interval
   useEffect(() => {
     return () => {
-        if (countdownIntervalRef.current) {
-            clearInterval(countdownIntervalRef.current);
-        }
+        if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+        if (videoCountdownIntervalRef.current) clearInterval(videoCountdownIntervalRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (videoCountdownIntervalRef.current) {
+      clearInterval(videoCountdownIntervalRef.current);
+    }
+    if (videoCountdown !== null && videoCountdown > 0) {
+      videoCountdownIntervalRef.current = setInterval(() => {
+        setVideoCountdown(prev => {
+          if (prev === null || prev <= 1) {
+            if (videoCountdownIntervalRef.current) clearInterval(videoCountdownIntervalRef.current);
+            if (wasPlayingBeforeVideoRef.current) {
+              startPlayback();
+            }
+            return null;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else if (videoCountdown === 0) {
+      setVideoCountdown(null);
+      if (wasPlayingBeforeVideoRef.current) {
+        startPlayback();
+      }
+    }
+    return () => {
+      if (videoCountdownIntervalRef.current) clearInterval(videoCountdownIntervalRef.current);
+    };
+  }, [videoCountdown, startPlayback]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -879,20 +952,31 @@ export default function Home() {
   const popoverContentClass = "w-[150px] p-2";
   
   const processedText = useCallback(() => {
-    const words = text.split(/(\s+)/);
+    const parts = text.split(/(\[PLAY VIDEO \d+])/g);
+    const elements: React.ReactNode[] = [];
     let wordCount = 0;
-    return words.map((word, index) => {
-      if (word.trim().length > 0) {
-        const wordIndex = wordCount;
-        wordCount++;
-        return (
-          <span key={index} id={`word-${wordIndex}`}>
-            {word}
-          </span>
-        );
-      }
-      return <span key={index}>{word}</span>;
+    let partKey = 0;
+
+    parts.forEach((part) => {
+        const cueMatch = part.match(/\[PLAY VIDEO (\d+)]/);
+        if (cueMatch) {
+            // This part is the cue, we render nothing visible for it
+        } else {
+            const words = part.split(/(\s+)/);
+            words.forEach((word, wordKey) => {
+                if (word.trim().length > 0) {
+                    const currentWordIndex = wordCount;
+                    wordCount++;
+                    elements.push(<span key={`word-${partKey}-${wordKey}`} id={`word-${currentWordIndex}`}>{word}</span>);
+                } else {
+                    elements.push(<span key={`space-${partKey}-${wordKey}`}>{word}</span>);
+                }
+            });
+        }
+        partKey++;
     });
+
+    return elements;
   }, [text]);
 
   const handleResetSettings = () => {
@@ -1106,7 +1190,7 @@ export default function Home() {
   };
 
 
-  const playPauseDisabled = prompterMode === 'slides' && slideDisplayMode === 'slide';
+  const playPauseDisabled = (prompterMode === 'slides' && slideDisplayMode === 'slide') || videoCountdown !== null;
   const voiceControlDisabled = playPauseDisabled;
   const speedSliderDisabled = isVoiceControlOn || playPauseDisabled;
 
@@ -1666,9 +1750,9 @@ export default function Home() {
                 )}
               </CardContent>
             </Card>
-             {countdown !== null && (
+             {(countdown !== null || videoCountdown !== null) && (
                 <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/30 pointer-events-none">
-                    <span className="text-white font-bold text-9xl drop-shadow-lg animate-ping">{countdown}</span>
+                    <span className="text-white font-bold text-9xl drop-shadow-lg animate-ping">{countdown ?? videoCountdown}</span>
                 </div>
             )}
             <div className="absolute bottom-4 right-4 z-10 flex flex-col items-end gap-2">

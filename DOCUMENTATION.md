@@ -10,7 +10,7 @@ This guide will walk you through all the features of CuePilot AI.
 
 *   **Pasting Your Script**: The primary way to get your text into the prompter is by using the **Script Editor** at the bottom of the screen. Simply click into the text area and paste or type your script. The prompter display will update in real-time.
 *   **Importing from Google**: You can sign in with your Google account to enable import options. Currently, you can import from Google Docs and Google Slides.
-*   **Set Your API Key**: To unlock the AI-powered features (like Voice Control and AI Editing), you must add your Google AI API key to the `.env` file in the project.
+*   **Set Your API Key**: To unlock the AI-powered features (like Voice Control and AI Editing), you must add your Google AI API key to the `.env` file in the project. For video countdowns, you may also need to enable the **YouTube Data API v3** in your Google Cloud Project.
 
 ### Main Controls
 
@@ -39,6 +39,9 @@ These icon-based buttons give you control over the teleprompter's functionality 
 *   **Download Log (Download Icon)**: This button becomes active once you have logged at least one command. Clicking it reveals a menu to download the session log as a `.CSV` file (for spreadsheets) or a `.SRT` file (a standard subtitle format perfect for video editing timelines).
 *   **Audio Input (AudioLines Icon)**: Click this icon to open a popover listing all available microphones connected to your computer. This allows you to easily switch between your system default, a USB mic, or other audio inputs without leaving the app.
 *   **Notes View (NotebookText Icon)**: When a Google Slides presentation is loaded, this button appears. It allows you to toggle the main prompter display between showing the full slide image and showing the speaker notes for that slide as scrollable text.
+*   **Video Playback Cues**: When using "Notes View", you can embed cues for videos in your speaker notes.
+    *   **How to use**: In your Google Slides speaker notes, type `[PLAY VIDEO 1]` where you want the video to start. The number should correspond to the order of the video on the slide (the first video is 1, the second is 2, etc.).
+    *   **Functionality**: When you are reading your notes with Voice Control active, the app will detect this cue. It will pause scrolling and display a countdown on-screen for the full duration of the video, cueing you on when to resume speaking. Scrolling will automatically continue after the countdown finishes.
 
 #### Controls on the Prompter View
 These controls are overlaid on the bottom-right of the prompter display area. They have a subtle, semi-transparent style to ensure they are visible on any background.
@@ -148,6 +151,7 @@ The voice control feature is an advanced AI system that interprets user speech f
 *   **Command-First Architecture**: The application sends audio snippets to a Genkit AI flow (`controlTeleprompter`). This flow is prompted to first check for specific verbal commands (e.g., "next slide," "pause") or editing commands (e.g., "change this to that"). Commands are given top priority.
 *   **Fallback to Pace Tracking**: If the AI determines the user is not giving a command, it treats the audio as script reading. It then performs the pace-tracking function: it returns both an `adjustedScrollSpeed` based on the user's reading pace and the `lastSpokenWordIndex` to keep the prompter perfectly synchronized.
 *   **State-Aware Logic**: The flow is also sent the current state of the prompter (e.g., `isPlaying`, `prompterMode`, `currentSlideIndex`), allowing it to make intelligent decisions based on context. For example, "next slide" only has an effect if `prompterMode` is 'slides'.
+*   **Video Cue Detection**: The frontend logic works with the pace tracking to identify when the user reads past a special `[PLAY VIDEO #]` cue in the speaker notes. When this happens, it pauses scrolling and initiates a countdown timer for the video's duration, providing a seamless transition for the presenter.
 
 #### 8. Smooth, Time-Based Scrolling Animation
 To ensure a fluid teleprompter experience, the scrolling is driven by a custom animation loop.
