@@ -110,6 +110,7 @@ interface SavedSetting {
 }
 
 interface CommandLogEntry {
+  take: number;
   timestamp: Date;
   command: string;
   details: string;
@@ -173,6 +174,7 @@ export default function Home() {
 
   const [isLogging, setIsLogging] = useState<boolean>(false);
   const [commandLog, setCommandLog] = useState<CommandLogEntry[]>([]);
+  const [takeNumber, setTakeNumber] = useState(1);
 
   const displayRef = useRef<HTMLDivElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -512,6 +514,21 @@ export default function Home() {
     
     stopPlayback();
     
+    const newTakeNumber = takeNumber + 1;
+    setTakeNumber(newTakeNumber);
+
+    if (isLogging) {
+        setCommandLog(prev => [
+            ...prev,
+            {
+                take: newTakeNumber,
+                timestamp: new Date(),
+                command: 'NEW_TAKE',
+                details: `Take ${newTakeNumber} started`,
+            },
+        ]);
+    }
+    
     if (displayRef.current) {
         displayRef.current.scrollTop = 0;
     }
@@ -565,7 +582,7 @@ export default function Home() {
                 break;
         }
 
-        setCommandLog(prev => [...prev, { timestamp, command, details }]);
+        setCommandLog(prev => [...prev, { take: takeNumber, timestamp, command, details }]);
       }
       
       const { command, slideNumber, targetWordIndex, modifiedScript, lastSpokenWordIndex, adjustedScrollSpeed } = result;
@@ -653,7 +670,7 @@ export default function Home() {
     } finally {
       setIsProcessingAudio(false);
     }
-  }, [text, toast, prompterMode, slideDisplayMode, currentSlideIndex, slides, handleNextSlide, handlePrevSlide, isPlaying, isLogging, startPlayback, stopPlayback, countdown]);
+  }, [text, toast, prompterMode, slideDisplayMode, currentSlideIndex, slides, handleNextSlide, handlePrevSlide, isPlaying, isLogging, startPlayback, stopPlayback, countdown, takeNumber]);
 
   const startRecording = useCallback(() => {
     navigator.mediaDevices.getUserMedia({ audio: true })
@@ -934,6 +951,7 @@ export default function Home() {
     if (nextState) { // Turning logging ON
         toast({ title: "Command logging enabled." });
         setCommandLog([]); // Clear previous log and start fresh
+        setTakeNumber(1); // Reset to Take 1
     } else {
         toast({ title: "Command logging disabled." });
     }
@@ -953,9 +971,9 @@ export default function Home() {
     if (format === 'csv') {
         fileExtension = 'csv';
         mimeType = 'text/csv;charset=utf-8;';
-        const header = 'Timestamp,Command,Details\n';
+        const header = 'Take,Timestamp,Command,Details\n';
         const rows = commandLog.map(log => 
-            `${log.timestamp.toISOString()},${log.command},"${log.details.replace(/"/g, '""')}"`
+            `${log.take},${log.timestamp.toISOString()},${log.command},"${log.details.replace(/"/g, '""')}"`
         ).join('\n');
         content = header + rows;
     } else { // srt
@@ -973,7 +991,7 @@ export default function Home() {
                 return `${h}:${m}:${s},${ms}`;
             };
 
-            return `${index + 1}\n${toSrtTime(startTime)} --> ${toSrtTime(endTime)}\n${log.command}: ${log.details}\n`;
+            return `${index + 1}\n${toSrtTime(startTime)} --> ${toSrtTime(endTime)}\nTake ${log.take} | ${log.command}: ${log.details}\n`;
         }).join('\n');
     }
 
@@ -983,7 +1001,7 @@ export default function Home() {
     a.href = url;
     a.download = `cuepilot_log_${new Date().toISOString()}.${fileExtension}`;
     document.body.appendChild(a);
-a.click();
+    a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
