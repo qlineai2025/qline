@@ -189,6 +189,7 @@ export default function Home() {
   const [videoCountdown, setVideoCountdown] = useState<number | null>(null);
   const [pauseCountdown, setPauseCountdown] = useState<number | null>(null);
   const [triggeredCues, setTriggeredCues] = useState<number[]>([]);
+  const [upcomingCue, setUpcomingCue] = useState<number | null>(null);
 
   const displayRef = useRef<HTMLDivElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -660,6 +661,10 @@ export default function Home() {
     setTriggeredCues([]);
   }, [currentSlideIndex, text]);
 
+  const playPauseDisabled = (prompterMode === 'slides' && slideDisplayMode === 'slide') || videoCountdown !== null || pauseCountdown !== null;
+  const voiceControlDisabled = playPauseDisabled;
+  const speedSliderDisabled = isVoiceControlOn || playPauseDisabled;
+
   const updatePositionFromSpeech = useCallback(async () => {
     if (audioChunksRef.current.length === 0) return;
     setIsProcessingAudio(true);
@@ -787,6 +792,22 @@ export default function Home() {
               }
             } else if (lastSpokenWordIndex !== null) {
                 if (areCuesEnabled) {
+                    const nextVideoCue = scriptCues.find(cue => 
+                        cue.type === 'video' && 
+                        cue.wordIndex > lastSpokenWordIndex && 
+                        !triggeredCues.includes(cue.wordIndex)
+                    );
+        
+                    if (nextVideoCue) {
+                        const wordsUntilCue = nextVideoCue.wordIndex - lastSpokenWordIndex;
+                        if (wordsUntilCue <= 10 && upcomingCue !== nextVideoCue.wordIndex) {
+                            setUpcomingCue(nextVideoCue.wordIndex);
+                            setTimeout(() => {
+                                setUpcomingCue(null);
+                            }, 2000);
+                        }
+                    }
+
                     const triggeredCue = scriptCues.find(cue => 
                         lastSpokenWordIndex >= cue.wordIndex && !triggeredCues.includes(cue.wordIndex)
                     );
@@ -795,6 +816,7 @@ export default function Home() {
                         wasPlayingBeforeCueRef.current = isPlaying;
                         stopPlayback();
                         setTriggeredCues(prev => [...prev, triggeredCue.wordIndex]);
+                        setUpcomingCue(null);
 
                         if (triggeredCue.type === 'video') {
                             setVideoCountdown(triggeredCue.duration);
@@ -824,7 +846,7 @@ export default function Home() {
     } finally {
       setIsProcessingAudio(false);
     }
-  }, [text, toast, prompterMode, slideDisplayMode, currentSlideIndex, slides, handleNextSlide, handlePrevSlide, isPlaying, isLogging, startPlayback, stopPlayback, countdown, takeNumber, scriptCues, triggeredCues, areCuesEnabled]);
+  }, [text, toast, prompterMode, slideDisplayMode, currentSlideIndex, slides, handleNextSlide, handlePrevSlide, isPlaying, isLogging, startPlayback, stopPlayback, countdown, takeNumber, scriptCues, triggeredCues, areCuesEnabled, upcomingCue, playPauseDisabled]);
 
   const startRecording = useCallback(() => {
     const audioConstraints = {
@@ -1236,12 +1258,6 @@ export default function Home() {
     URL.revokeObjectURL(url);
   };
 
-
-  const playPauseDisabled = (prompterMode === 'slides' && slideDisplayMode === 'slide') || videoCountdown !== null || pauseCountdown !== null;
-  const voiceControlDisabled = playPauseDisabled;
-  const speedSliderDisabled = isVoiceControlOn || playPauseDisabled;
-
-
   return (
     <main className="flex h-screen flex-col bg-background" onClickCapture={() => { if (contextMenu) setContextMenu(null)}}>
       <div className="grid flex-1 grid-cols-[auto_1fr] gap-4 p-4 min-h-0">
@@ -1619,16 +1635,16 @@ export default function Home() {
                                 <TooltipContent><p>Vertical Margin: {verticalMargin}%</p></TooltipContent>
                                </Tooltip>
                                <PopoverContent className={popoverContentClass}
-                                onPointerDownOutside={() => handleSave(setVerticalMargin, verticalMarginInput, 20, 60, setIsVerticalMarginPopoverOpen)}>
+                                onPointerDownOutside={() => handleSave(setVerticalMargin, verticalMarginInput, 0, 50, setIsVerticalMarginPopoverOpen)}>
                                     <Input
                                       id="v-margin-input"
                                       type="number"
                                       value={verticalMarginInput}
                                       onChange={(e) => setVerticalMarginInput(e.target.value)}
-                                      min={20}
-                                      max={60}
+                                      min={0}
+                                      max={50}
                                       onKeyDown={(e) => {
-                                        if (e.key === 'Enter') handleSave(setVerticalMargin, verticalMarginInput, 20, 60, setIsVerticalMarginPopoverOpen);
+                                        if (e.key === 'Enter') handleSave(setVerticalMargin, verticalMarginInput, 0, 50, setIsVerticalMarginPopoverOpen);
                                       }}
                                     />
                                </PopoverContent>
@@ -1636,8 +1652,8 @@ export default function Home() {
                           <Slider
                             id="vertical-margin"
                             orientation="vertical"
-                            min={20}
-                            max={60}
+                            min={0}
+                            max={50}
                             step={1}
                             value={[verticalMargin]}
                             onValueChange={(value) => setVerticalMargin(value[0])}
@@ -1690,6 +1706,19 @@ export default function Home() {
               )}
             >
               <CardContent className="p-0 flex-grow overflow-hidden rounded-lg relative">
+                {isVoiceControlOn && !voiceControlDisabled && (
+                  <div className="absolute top-4 left-4 z-10 flex items-center gap-2 pointer-events-none">
+                      <div className="h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse" />
+                      <span className={cn("text-xs font-semibold", isHighContrast ? "text-red-500" : "text-red-600")}>REC</span>
+                  </div>
+                )}
+                {upcomingCue !== null && (
+                    <div className="absolute top-4 left-20 z-10 flex items-center gap-2 pointer-events-none">
+                        <div className="h-2.5 w-2.5 rounded-full bg-green-500 animate-pulse" />
+                        <span className={cn("text-xs font-semibold", isHighContrast ? "text-green-400" : "text-green-600")}>CUE</span>
+                    </div>
+                )}
+
                 {prompterMode === 'text' && (
                   <div
                     ref={displayRef}
@@ -1708,7 +1737,7 @@ export default function Home() {
                       className="w-full min-h-full flex justify-center m-auto"
                        style={{
                         paddingTop: `${verticalMargin}%`,
-                        paddingBottom: '20%',
+                        paddingBottom: '50vh',
                       }}
                     >
                       <div
@@ -1761,7 +1790,7 @@ export default function Home() {
                           className="w-full min-h-full flex justify-center m-auto"
                            style={{
                             paddingTop: `${verticalMargin}%`,
-                            paddingBottom: '20%',
+                            paddingBottom: '50vh',
                           }}
                         >
                           <div
@@ -1996,3 +2025,5 @@ export default function Home() {
     </main>
   );
 }
+
+    
