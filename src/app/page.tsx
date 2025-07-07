@@ -105,7 +105,7 @@ You can also get AI help. Just select some text and right-click to rewrite it, f
 Enjoy your flawless presentation!`;
 
 const DEFAULT_SETTINGS = {
-  scrollSpeed: 35,
+  scrollSpeed: 10,
   fontSize: 40,
   horizontalMargin: 20,
   verticalMargin: 40,
@@ -475,14 +475,11 @@ export default function Home() {
   }, [currentSlideIndex, slides]);
 
   const mapSliderToEffectiveSpeed = (sliderValue: number): number => {
-    // This function maps the slider value (30-100) to an effective scroll speed in pixels per second.
-    // - Slider value 35 should map to an effective speed of 25 px/s.
-    // - Slider value 100 should map to an effective speed of 125 px/s (5x the speed at 35).
-    // This creates a linear mapping between these two points.
-    // Points: (35, 25) and (100, 125)
-    const slope = (125 - 25) / (100 - 35); // 100 / 65 = 20 / 13
-    const yIntercept = 25 - slope * 35; // 25 - (20/13)*35 = -375 / 13
-    return slope * sliderValue + yIntercept;
+    // New mapping: Slider 0-100 -> Speed 25-250 px/s
+    // y = mx + b
+    // m = (250 - 25) / (100 - 0) = 2.25
+    // b = 25
+    return 2.25 * sliderValue + 25;
   };
 
   const scrollAnimation = useCallback((timestamp: number) => {
@@ -1551,16 +1548,16 @@ export default function Home() {
                                 <TooltipContent><p>Scroll Speed: {scrollSpeed.toFixed(0)}</p></TooltipContent>
                                </Tooltip>
                                <PopoverContent className={popoverContentClass}
-                                onPointerDownOutside={() => handleSave(setScrollSpeed, speedInput, 30, 100, setIsSpeedPopoverOpen)}>
+                                onPointerDownOutside={() => handleSave(setScrollSpeed, speedInput, 0, 100, setIsSpeedPopoverOpen)}>
                                     <Input
                                       id="speed-input"
                                       type="number"
                                       value={speedInput}
                                       onChange={(e) => setSpeedInput(e.target.value)}
-                                      min={30}
+                                      min={0}
                                       max={100}
                                       onKeyDown={(e) => {
-                                        if (e.key === 'Enter') handleSave(setScrollSpeed, speedInput, 30, 100, setIsSpeedPopoverOpen)
+                                        if (e.key === 'Enter') handleSave(setScrollSpeed, speedInput, 0, 100, setIsSpeedPopoverOpen)
                                       }}
                                     />
                                </PopoverContent>
@@ -1568,7 +1565,7 @@ export default function Home() {
                           <Slider
                             id="speed"
                             orientation="vertical"
-                            min={30}
+                            min={0}
                             max={100}
                             step={1}
                             value={[scrollSpeed]}

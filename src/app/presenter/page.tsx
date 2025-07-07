@@ -28,7 +28,7 @@ const DEFAULT_SETTINGS: PresenterSettings = {
   isHighContrast: true,
   isFlippedHorizontally: false,
   isFlippedVertically: false,
-  scrollSpeed: 35,
+  scrollSpeed: 10,
   prompterMode: 'text',
   slides: [],
   currentSlideIndex: 0,
@@ -73,14 +73,11 @@ export default function PresenterPage() {
   const scrollSpeedRef = useRef(settings.scrollSpeed);
 
   const mapSliderToEffectiveSpeed = (sliderValue: number): number => {
-    // This function maps the slider value (30-100) to an effective scroll speed in pixels per second.
-    // - Slider value 35 should map to an effective speed of 25 px/s.
-    // - Slider value 100 should map to an effective speed of 125 px/s (5x the speed at 35).
-    // This creates a linear mapping between these two points.
-    // Points: (35, 25) and (100, 125)
-    const slope = (125 - 25) / (100 - 35); // 100 / 65 = 20 / 13
-    const yIntercept = 25 - slope * 35; // 25 - (20/13)*35 = -375 / 13
-    return slope * sliderValue + yIntercept;
+    // New mapping: Slider 0-100 -> Speed 25-250 px/s
+    // y = mx + b
+    // m = (250 - 25) / (100 - 0) = 2.25
+    // b = 25
+    return 2.25 * sliderValue + 25;
   };
 
 
