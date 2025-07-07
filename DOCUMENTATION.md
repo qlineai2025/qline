@@ -55,7 +55,7 @@ These controls are overlaid on the bottom-right of the prompter display area. Th
 *   **High Contrast (Contrast Icon)**: Toggles the display between standard mode (black text on a light background) and high-contrast mode (white text on a black background).
 *   **Flip Horizontal (ArrowLeftRight Icon)**: Mirrors the prompter text horizontally. This is essential for use with physical teleprompter hardware that uses a mirror.
 *   **Flip Vertical (ArrowUpDown Icon)**: Flips the prompter text vertically.
-*   **Full Screen (Maximize/Minimize Icon)**: Manually toggles the full-screen view. Note that pressing "Play" also automatically enters full-screen. Pressing the 'Escape' key will exit full-screen mode.
+*   **Full Screen (Maximize/Minimize Icon)**: Manually toggles the full-screen view. Pressing "Play" also automatically enters full-screen, unless "Assist Mode" is active. Pressing the 'Escape' key will exit full-screen mode.
 
 ### Fine-Tuning Controls (Sliders & Presets)
 
@@ -67,10 +67,10 @@ The control panel features four vertical sliders for precise adjustments, as wel
     *   **Hover over the icon** above the slider to see the current value in a tooltip.
     *   **Click the icon** to open a popover where you can type a precise numeric value. Press 'Enter' or click outside the popover to save.
 *   **Controls**:
-    *   **Scroll Speed (Gauge Icon)**: Sets the manual scrolling speed. This slider is disabled when Voice Control is active.
+    *   **Scroll Speed (Gauge Icon)**: Sets the manual scrolling speed, with a wide range from a slow crawl to a very fast pace. This slider is disabled when Voice Control is active.
     *   **Font Size (TextIcon)**: Increases or decreases the size of the prompter text.
     *   **Horizontal Margin (StretchHorizontal Icon)**: Adjusts the empty space on the left and right sides of the text.
-    *   **Vertical Margin (StretchVertical Icon)**: Adjusts the empty space at the top and bottom of the prompter area.
+    *   **Vertical Margin (StretchVertical Icon)**: Adjusts the vertical reading line. The default value places the text in the upper portion of the view, ideal for looking into a camera. The slider then allows you to fine-tune this position up or down.
 
 #### Managing Setting Presets
 Directly within the "Prompter Settings" header, you can save, load, and manage your slider configurations.
