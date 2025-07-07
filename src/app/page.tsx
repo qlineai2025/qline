@@ -418,7 +418,7 @@ export default function Home() {
           currentSlideIndex,
       };
       
-      const { command, slideNumber, targetWordIndex, lastSpokenWordIndex, adjustedScrollSpeed } = await controlTeleprompter({
+      const { command, slideNumber, targetWordIndex, modifiedScript, lastSpokenWordIndex, adjustedScrollSpeed } = await controlTeleprompter({
         audioDataUri,
         scriptText: text,
         currentScrollSpeed: scrollSpeedRef.current,
@@ -460,6 +460,15 @@ export default function Home() {
                     targetWord.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     channelRef.current?.postMessage({ type: 'scroll_to_word', payload: { wordIndex: targetWordIndex } });
                 }
+            }
+            break;
+        case 'edit_text':
+            if (modifiedScript) {
+                setText(modifiedScript);
+                toast({
+                    title: "Script Updated",
+                    description: "Your script was updated by voice command.",
+                });
             }
             break;
         case 'no_op':

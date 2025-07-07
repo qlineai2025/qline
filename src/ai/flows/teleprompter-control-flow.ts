@@ -43,10 +43,12 @@ const TeleprompterControlOutputSchema = z.object({
       'start_scrolling', 
       'rewind',
       'go_to_text',
+      'edit_text',
       'no_op'
     ]).describe("The interpreted command from the user's speech. 'no_op' if no command was detected."),
   slideNumber: z.number().nullable().describe("The target slide number for the 'go_to_slide' command."),
   targetWordIndex: z.number().nullable().describe("The starting word index of a text snippet to jump to for the 'go_to_text' command."),
+  modifiedScript: z.string().nullable().describe("The full, modified script text if an 'edit_text' command was issued."),
   lastSpokenWordIndex: z
     .number()
     .describe('The index of the last word in the script that was spoken in the audio. Only relevant if command is no_op.'),
@@ -86,10 +88,17 @@ If no command from list 1 is found, listen for commands that search for text wit
 - Set the 'targetWordIndex' to this index.
 - Set other fields to their current values or null as they are not relevant.
 
-**3. If No Command, Track Position:**
-If the audio does NOT contain a command from list 1 or 2, the user is reading the script. In this case, you must:
+**3. Check for Script Editing Commands:**
+If no command from list 1 or 2 is found, listen for direct editing commands. Examples: "change the line '[old text]' to '[new text]'", "replace '[old text]' with '[new text]'", "add the sentence '[new sentence]' after '[existing text]'", "delete the paragraph that says '[text snippet]'".
+- If you detect an editing command, set the 'command' field to 'edit_text'.
+- Apply the requested change to the "Full Script".
+- Your response for 'modifiedScript' MUST be the complete, updated script.
+- Set all other fields to null or their original values, as they are not relevant.
+
+**4. If No Command, Track Position:**
+If the audio does NOT contain a command, the user is reading the script. In this case, you must:
 - Set 'command' to 'no_op'.
-- Set 'slideNumber' and 'targetWordIndex' to null.
+- Set 'slideNumber', 'targetWordIndex', and 'modifiedScript' to null.
 - Transcribe the audio and match it to the provided script text.
 - Identify the index of the last spoken word in the script.
 - Analyze the reading pace and recommend an adjusted scroll speed.
