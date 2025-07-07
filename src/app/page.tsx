@@ -175,6 +175,7 @@ export default function Home() {
   const [isLogging, setIsLogging] = useState<boolean>(false);
   const [commandLog, setCommandLog] = useState<CommandLogEntry[]>([]);
   const [takeNumber, setTakeNumber] = useState(1);
+  const [hasStartedPlayback, setHasStartedPlayback] = useState(false);
 
   const displayRef = useRef<HTMLDivElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -466,38 +467,53 @@ export default function Home() {
   }, []);
 
   const startPlayback = useCallback(() => {
-      setIsMaximized(true);
-  
-      if (displayRef.current) {
-          if (displayRef.current.scrollTop + displayRef.current.clientHeight >= displayRef.current.scrollHeight - 1) {
-              displayRef.current.scrollTop = 0;
-              channelRef.current?.postMessage({ type: "reset" });
-          }
+    if (!hasStartedPlayback) {
+      setHasStartedPlayback(true);
+      if (isLogging) {
+        setCommandLog(prev => [
+            ...prev,
+            {
+                take: takeNumber,
+                timestamp: new Date(),
+                command: 'NEW_TAKE',
+                details: `Playback started (Take ${takeNumber})`,
+            },
+        ]);
       }
-  
-      if (startDelay > 0) {
-          setCountdown(startDelay);
-          countdownIntervalRef.current = setInterval(() => {
-              setCountdown(prev => {
-                  if (prev === null) {
-                      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-                      return null;
-                  }
-                  if (prev <= 1) {
-                      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-                      countdownIntervalRef.current = null;
-                      setIsPlaying(true);
-                      channelRef.current?.postMessage({ type: "play" });
-                      return null;
-                  }
-                  return prev - 1;
-              });
-          }, 1000);
-      } else {
-          setIsPlaying(true);
-          channelRef.current?.postMessage({ type: "play" });
-      }
-  }, [startDelay]);
+    }
+
+    setIsMaximized(true);
+
+    if (displayRef.current) {
+        if (displayRef.current.scrollTop + displayRef.current.clientHeight >= displayRef.current.scrollHeight - 1) {
+            displayRef.current.scrollTop = 0;
+            channelRef.current?.postMessage({ type: "reset" });
+        }
+    }
+
+    if (startDelay > 0) {
+        setCountdown(startDelay);
+        countdownIntervalRef.current = setInterval(() => {
+            setCountdown(prev => {
+                if (prev === null) {
+                    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+                    return null;
+                }
+                if (prev <= 1) {
+                    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+                    countdownIntervalRef.current = null;
+                    setIsPlaying(true);
+                    channelRef.current?.postMessage({ type: "play" });
+                    return null;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+    } else {
+        setIsPlaying(true);
+        channelRef.current?.postMessage({ type: "play" });
+    }
+  }, [startDelay, hasStartedPlayback, isLogging, takeNumber]);
 
   const handlePlayPause = () => {
     if (prompterMode === 'slides' && slideDisplayMode === 'slide') return;
@@ -505,13 +521,27 @@ export default function Home() {
     if (isPlaying || countdown !== null) {
         stopPlayback();
     } else {
+        if (hasStartedPlayback) {
+            const newTakeNumber = takeNumber + 1;
+            setTakeNumber(newTakeNumber);
+            if (isLogging) {
+                setCommandLog(prev => [
+                    ...prev,
+                    {
+                        take: newTakeNumber,
+                        timestamp: new Date(),
+                        command: 'NEW_TAKE',
+                        details: `Resumed playback (Take ${newTakeNumber})`,
+                    },
+                ]);
+            }
+        }
         startPlayback();
     }
   };
   
   const handleRewind = () => {
     const wasPlaying = isPlaying;
-    
     stopPlayback();
     
     const newTakeNumber = takeNumber + 1;
@@ -524,7 +554,7 @@ export default function Home() {
                 take: newTakeNumber,
                 timestamp: new Date(),
                 command: 'NEW_TAKE',
-                details: `Take ${newTakeNumber} started`,
+                details: `Rewind (Take ${newTakeNumber})`,
             },
         ]);
     }
@@ -615,6 +645,20 @@ export default function Home() {
             break;
         case 'go_to_text':
             if (targetWordIndex !== null) {
+                const newTakeNumber = takeNumber + 1;
+                setTakeNumber(newTakeNumber);
+                if (isLogging) {
+                    setCommandLog(prev => [
+                        ...prev,
+                        {
+                            take: newTakeNumber,
+                            timestamp: new Date(),
+                            command: 'NEW_TAKE',
+                            details: `Jumped to text (Take ${newTakeNumber})`,
+                        },
+                    ]);
+                }
+
                 const targetWord = document.getElementById(`word-${targetWordIndex}`);
                 if (targetWord) {
                     targetWord.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -952,6 +996,7 @@ export default function Home() {
         toast({ title: "Command logging enabled." });
         setCommandLog([]); // Clear previous log and start fresh
         setTakeNumber(1); // Reset to Take 1
+        setHasStartedPlayback(false); // Reset playback state for new logging session
     } else {
         toast({ title: "Command logging disabled." });
     }
