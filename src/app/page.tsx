@@ -994,31 +994,29 @@ a.click();
                             </TooltipTrigger>
                             <TooltipContent><p>{isLogging ? 'Stop Command Logging' : 'Start Command Logging'}</p></TooltipContent>
                         </Tooltip>
-                        {commandLog.length > 0 && (
-                            <DropdownMenu>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="text-accent">
-                                                <Download />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                    </TooltipTrigger>
-                                    <TooltipContent><p>Download Log</p></TooltipContent>
-                                </Tooltip>
-                                <DropdownMenuContent>
-                                    <DropdownMenuItem onClick={() => downloadLog('csv')}>Download as .CSV</DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => downloadLog('srt')}>Download as .SRT</DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem 
-                                        className="!text-destructive focus:bg-destructive/10" 
-                                        onClick={() => setCommandLog([])}
-                                    >
-                                        Clear Log
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        )}
+                        <DropdownMenu>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" disabled={commandLog.length === 0}>
+                                            <Download />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                </TooltipTrigger>
+                                <TooltipContent><p>Download Log</p></TooltipContent>
+                            </Tooltip>
+                            <DropdownMenuContent>
+                                <DropdownMenuItem onClick={() => downloadLog('csv')}>Download as .CSV</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => downloadLog('srt')}>Download as .SRT</DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                    className="!text-destructive focus:bg-destructive/10" 
+                                    onClick={() => setCommandLog([])}
+                                >
+                                    Clear Log
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                         {prompterMode === 'slides' && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
