@@ -68,6 +68,7 @@ import {
   Download,
   Timer,
   AudioLines,
+  ListVideo,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -141,6 +142,7 @@ export default function Home() {
   const [isAiEditing, setIsAiEditing] = useState(false);
   const [isEditorExpanded, setIsEditorExpanded] = useState<boolean>(false);
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [areCuesEnabled, setAreCuesEnabled] = useState<boolean>(true);
   
   const [prompterMode, setPrompterMode] = useState<'text' | 'slides'>('text');
   const [slideDisplayMode, setSlideDisplayMode] = useState<'slide' | 'notes'>('slide');
@@ -784,21 +786,23 @@ export default function Home() {
                 if (isPlaying) stopPlayback();
               }
             } else if (lastSpokenWordIndex !== null) {
-                const triggeredCue = scriptCues.find(cue => 
-                    lastSpokenWordIndex >= cue.wordIndex && !triggeredCues.includes(cue.wordIndex)
-                );
+                if (areCuesEnabled) {
+                    const triggeredCue = scriptCues.find(cue => 
+                        lastSpokenWordIndex >= cue.wordIndex && !triggeredCues.includes(cue.wordIndex)
+                    );
 
-                if (triggeredCue) {
-                    wasPlayingBeforeCueRef.current = isPlaying;
-                    stopPlayback();
-                    setTriggeredCues(prev => [...prev, triggeredCue.wordIndex]);
+                    if (triggeredCue) {
+                        wasPlayingBeforeCueRef.current = isPlaying;
+                        stopPlayback();
+                        setTriggeredCues(prev => [...prev, triggeredCue.wordIndex]);
 
-                    if (triggeredCue.type === 'video') {
-                        setVideoCountdown(triggeredCue.duration);
-                    } else if (triggeredCue.type === 'pause') {
-                        setPauseCountdown(triggeredCue.duration);
+                        if (triggeredCue.type === 'video') {
+                            setVideoCountdown(triggeredCue.duration);
+                        } else if (triggeredCue.type === 'pause') {
+                            setPauseCountdown(triggeredCue.duration);
+                        }
+                        return;
                     }
-                    return;
                 }
             }
 
@@ -820,7 +824,7 @@ export default function Home() {
     } finally {
       setIsProcessingAudio(false);
     }
-  }, [text, toast, prompterMode, slideDisplayMode, currentSlideIndex, slides, handleNextSlide, handlePrevSlide, isPlaying, isLogging, startPlayback, stopPlayback, countdown, takeNumber, scriptCues, triggeredCues]);
+  }, [text, toast, prompterMode, slideDisplayMode, currentSlideIndex, slides, handleNextSlide, handlePrevSlide, isPlaying, isLogging, startPlayback, stopPlayback, countdown, takeNumber, scriptCues, triggeredCues, areCuesEnabled]);
 
   const startRecording = useCallback(() => {
     const audioConstraints = {
@@ -1316,6 +1320,14 @@ export default function Home() {
                               />
                           </PopoverContent>
                         </Popover>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={() => setAreCuesEnabled(!areCuesEnabled)}>
+                                    <ListVideo className={cn(areCuesEnabled && "text-accent")} />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>{areCuesEnabled ? 'Disable Script Cues' : 'Enable Script Cues'}</p></TooltipContent>
+                        </Tooltip>
                          <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button variant="ghost" size="icon" onClick={handleToggleLogging}>
