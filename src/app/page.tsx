@@ -67,6 +67,7 @@ import {
   ClipboardList,
   Download,
   Timer,
+  AudioLines,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -75,6 +76,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { GoogleDocPicker } from "@/components/google-doc-picker";
 import { GoogleSlidePicker } from "@/components/google-slide-picker";
 import { GoogleSlideContent } from "@/ai/flows/google-drive-flows";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 
 const DEFAULT_TEXT = `Welcome to CuePilot AI.
@@ -177,6 +180,10 @@ export default function Home() {
   const [takeNumber, setTakeNumber] = useState(1);
   const [hasStartedPlayback, setHasStartedPlayback] = useState(false);
 
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string>('default');
+  const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
+  const [isMicPickerOpen, setIsMicPickerOpen] = useState(false);
+
   const displayRef = useRef<HTMLDivElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -197,6 +204,47 @@ export default function Home() {
   useEffect(() => { setHorizontalMarginInput(String(horizontalMargin)) }, [horizontalMargin]);
   useEffect(() => { setVerticalMarginInput(String(verticalMargin)) }, [verticalMargin]);
   useEffect(() => { setDelayInput(String(startDelay)) }, [startDelay]);
+
+  const getAudioDevices = useCallback(async () => {
+    if (!navigator.mediaDevices?.enumerateDevices) {
+      toast({ variant: "destructive", title: "Unsupported Browser", description: "Your browser does not support audio device enumeration." });
+      return;
+    }
+    try {
+      // Must request permission to get device labels.
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const audioInputs = devices.filter(d => d.kind === 'audioinput');
+      setAudioDevices(audioInputs);
+      // Stop the tracks immediately after getting permission, we don't need the stream itself.
+      stream.getTracks().forEach(track => track.stop());
+    } catch (err) {
+      console.error("Could not get audio devices:", err);
+      toast({
+        variant: "destructive",
+        title: "Microphone Access Denied",
+        description: "Cannot list microphones without permission.",
+      });
+      setIsMicPickerOpen(false); // Close popover if permission is denied
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    const handleDeviceChange = () => {
+      // Refetch devices if the list changes while the picker is open
+      if (isMicPickerOpen) {
+          getAudioDevices();
+      }
+    };
+    if (navigator.mediaDevices) {
+        navigator.mediaDevices.addEventListener('devicechange', handleDeviceChange);
+    }
+    return () => {
+        if (navigator.mediaDevices) {
+            navigator.mediaDevices.removeEventListener('devicechange', handleDeviceChange);
+        }
+    };
+  }, [getAudioDevices, isMicPickerOpen]);
 
 
   // Load saved settings from localStorage on mount
@@ -717,7 +765,13 @@ export default function Home() {
   }, [text, toast, prompterMode, slideDisplayMode, currentSlideIndex, slides, handleNextSlide, handlePrevSlide, isPlaying, isLogging, startPlayback, stopPlayback, countdown, takeNumber]);
 
   const startRecording = useCallback(() => {
-    navigator.mediaDevices.getUserMedia({ audio: true })
+    const audioConstraints = {
+      audio: selectedDeviceId === 'default'
+        ? true
+        : { deviceId: { exact: selectedDeviceId } }
+    };
+
+    navigator.mediaDevices.getUserMedia(audioConstraints)
       .then(stream => {
         mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
         mediaRecorderRef.current.ondataavailable = (event) => {
@@ -747,7 +801,7 @@ export default function Home() {
         });
         setIsVoiceControlOn(false);
       });
-  }, [updatePositionFromSpeech, toast]);
+  }, [updatePositionFromSpeech, toast, selectedDeviceId]);
 
   const stopRecording = useCallback(() => {
     if (recordingIntervalRef.current) {
@@ -1166,6 +1220,40 @@ export default function Home() {
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
+                        <Popover open={isMicPickerOpen} onOpenChange={(open) => {
+                            setIsMicPickerOpen(open);
+                            if (open) {
+                                getAudioDevices();
+                            }
+                        }}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <PopoverTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <AudioLines />
+                                </Button>
+                              </PopoverTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Select Audio Input</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          <PopoverContent className="w-[240px] p-0">
+                            <Label className="p-2 text-sm font-medium text-muted-foreground">Audio Input</Label>
+                            <RadioGroup value={selectedDeviceId} onValueChange={setSelectedDeviceId} className="p-1">
+                                <div className="flex items-center space-x-2 p-2 rounded-md hover:bg-accent">
+                                    <RadioGroupItem value="default" id="device-default" />
+                                    <Label htmlFor="device-default" className="w-full">System Default</Label>
+                                </div>
+                                {audioDevices.map((device, index) => (
+                                    <div key={device.deviceId} className="flex items-center space-x-2 p-2 rounded-md hover:bg-accent">
+                                        <RadioGroupItem value={device.deviceId} id={`device-${device.deviceId}`} />
+                                        <Label htmlFor={`device-${device.deviceId}`} className="truncate w-full">{device.label || `Microphone ${index + 1}`}</Label>
+                                    </div>
+                                ))}
+                            </RadioGroup>
+                          </PopoverContent>
+                        </Popover>
                         {prompterMode === 'slides' && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
