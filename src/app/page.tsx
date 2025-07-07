@@ -541,7 +541,9 @@ export default function Home() {
       }
     }
 
-    setIsMaximized(true);
+    if (!isPresenterModeActive) {
+      setIsMaximized(true);
+    }
 
     if (displayRef.current) {
         if (displayRef.current.scrollTop + displayRef.current.clientHeight >= displayRef.current.scrollHeight - 1) {
@@ -572,7 +574,7 @@ export default function Home() {
         setIsPlaying(true);
         channelRef.current?.postMessage({ type: "play" });
     }
-  }, [startDelay, hasStartedPlayback, isLogging, takeNumber]);
+  }, [startDelay, hasStartedPlayback, isLogging, takeNumber, isPresenterModeActive]);
 
   const handlePlayPause = () => {
     if (prompterMode === 'slides' && slideDisplayMode === 'slide') return;
@@ -1756,7 +1758,7 @@ export default function Home() {
                     }}
                   >
                     <div
-                      className="w-full min-h-full flex justify-center m-auto"
+                      className="w-full"
                        style={{
                         paddingTop: `${verticalMargin}vh`,
                         paddingBottom: '100vh',
@@ -1809,7 +1811,7 @@ export default function Home() {
                         }}
                       >
                         <div
-                          className="w-full min-h-full flex justify-center m-auto"
+                          className="w-full"
                            style={{
                             paddingTop: `${verticalMargin}vh`,
                             paddingBottom: '100vh',
