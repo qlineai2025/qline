@@ -151,7 +151,7 @@ export default function Home() {
   const [isEditorExpanded, setIsEditorExpanded] = useState<boolean>(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [areCuesEnabled, setAreCuesEnabled] = useState<boolean>(true);
-  const [isIndicatorVisible, setIsIndicatorVisible] = useState<boolean>(true);
+  const [isIndicatorVisible, setIsIndicatorVisible] = useState<boolean>(false);
   
   const [prompterMode, setPrompterMode] = useState<'text' | 'slides'>('text');
   const [slideDisplayMode, setSlideDisplayMode] = useState<'slide' | 'notes'>('slide');
@@ -1722,7 +1722,7 @@ export default function Home() {
                           className="h-5 w-5 flex items-center justify-center cursor-pointer rounded-full"
                           onClick={() => setIsIndicatorVisible(!isIndicatorVisible)}
                         >
-                          {isPlaying && isIndicatorVisible && (
+                          {isPlaying && isVoiceControlOn && isIndicatorVisible && (
                             <div className="h-2.5 w-2.5 rounded-full bg-red-500" />
                           )}
                         </div>

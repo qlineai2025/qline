@@ -44,6 +44,11 @@ These icon-based buttons give you control over the teleprompter's functionality 
     *   **Video Playback**: In your Google Slides speaker notes, type `[PLAY VIDEO 1]` where you want the video to start. The number should correspond to the order of the video on the slide (the first video is 1, the second is 2, etc.). When you read past this cue with Voice Control active, the app will pause scrolling and display a countdown for the full duration of the video, cueing you on when to resume speaking. Scrolling will automatically continue after the countdown finishes.
     *   **Planned Pauses**: In your script or speaker notes, type `[PAUSE 3 SECONDS]` where you want a timed pause. When the app detects this cue, it will pause scrolling and display a countdown. This is perfect for dramatic pauses or giving your audience time to absorb a key point.
 
+#### On-Screen Indicators
+Located in the top-left of the prompter view, these subtle indicators provide at-a-glance status information.
+*   **Voice Control Indicator (Red Dot)**: This dot appears only when **Voice Control** is on and the script is actively scrolling. It serves as confirmation that the AI is listening and managing the pace. This indicator is hidden by default to maintain a clean view. You can click its empty space (top-left corner) to toggle its visibility.
+*   **Upcoming Cue Indicator (Green Dot)**: This dot appears and fades after a few seconds when you are approaching an embedded script cue (like `[PLAY VIDEO #]` or `[PAUSE #]`), giving you a silent heads-up for the upcoming action.
+
 #### Controls on the Prompter View
 These controls are overlaid on the bottom-right of the prompter display area. They have a subtle, semi-transparent style to ensure they are visible on any background.
 *   **Rewind (Rewind Icon)**: Instantly stops playback and scrolls the teleprompter content to the very top. If playback was active, it will automatically re-initiate the countdown and start again. This action also marks the beginning of a new **take** in the command log.
