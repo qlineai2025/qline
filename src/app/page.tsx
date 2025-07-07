@@ -81,20 +81,28 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 
 
-const DEFAULT_TEXT = `Welcome to CuePilot AI.
+const DEFAULT_TEXT = `Welcome to CuePilot AI, your intelligent teleprompter.
 
-You can start by pasting your script here.
+This is your script editor. Paste your text here to begin.
 
-Right-click on selected text to get AI assistance.
+Key Features:
+- Press the Play button to start scrolling.
+- Use the settings on the left to customize font size, margins, and scroll speed.
+- Enable Voice Control (the microphone icon) to have the speed match your reading pace automatically.
 
-Press the play button to start scrolling. The app will automatically enter full-screen mode.
+With Voice Control on, you can also use commands like:
+- "pause" or "stop"
+- "play" or "start"
+- "rewind" to go to the top
+- "next slide" (when using Google Slides)
 
-Enable voice control (on by default) to have the teleprompter automatically adjust its speed to your reading pace.
+This prompter also recognizes special cues in your script. When you read past them, it will trigger an action.
 
-You can also use voice commands like "next slide", "pause", "play", or "rewind".
+For example, a countdown is about to start... [PAUSE 3 SECONDS] ...see?
 
-Use the settings on the left to adjust the font size, margins, and manual scroll speed.
-`;
+You can also get AI help. Just select some text and right-click to rewrite it, fix grammar, or reformat it.
+
+Enjoy your flawless presentation!`;
 
 const DEFAULT_SETTINGS = {
   scrollSpeed: 30,
@@ -792,16 +800,15 @@ export default function Home() {
               }
             } else if (lastSpokenWordIndex !== null) {
                 if (areCuesEnabled) {
-                    const nextVideoCue = scriptCues.find(cue => 
-                        cue.type === 'video' && 
+                    const nextCue = scriptCues.find(cue => 
                         cue.wordIndex > lastSpokenWordIndex && 
                         !triggeredCues.includes(cue.wordIndex)
                     );
         
-                    if (nextVideoCue) {
-                        const wordsUntilCue = nextVideoCue.wordIndex - lastSpokenWordIndex;
-                        if (wordsUntilCue <= 10 && upcomingCue !== nextVideoCue.wordIndex) {
-                            setUpcomingCue(nextVideoCue.wordIndex);
+                    if (nextCue) {
+                        const wordsUntilCue = nextCue.wordIndex - lastSpokenWordIndex;
+                        if (wordsUntilCue <= 10 && upcomingCue !== nextCue.wordIndex) {
+                            setUpcomingCue(nextCue.wordIndex);
                             setTimeout(() => {
                                 setUpcomingCue(null);
                             }, 2000);
@@ -846,7 +853,7 @@ export default function Home() {
     } finally {
       setIsProcessingAudio(false);
     }
-  }, [text, toast, prompterMode, slideDisplayMode, currentSlideIndex, slides, handleNextSlide, handlePrevSlide, isPlaying, isLogging, startPlayback, stopPlayback, countdown, takeNumber, scriptCues, triggeredCues, areCuesEnabled, upcomingCue, playPauseDisabled]);
+  }, [text, toast, prompterMode, slideDisplayMode, currentSlideIndex, slides, handleNextSlide, handlePrevSlide, isPlaying, isLogging, startPlayback, stopPlayback, countdown, takeNumber, scriptCues, triggeredCues, areCuesEnabled, upcomingCue, playPauseDisabled, handleRewind]);
 
   const startRecording = useCallback(() => {
     const audioConstraints = {
@@ -1027,7 +1034,7 @@ export default function Home() {
 
     parts.forEach((part) => {
         const videoMatch = part.match(/\[PLAY VIDEO (\d+)\]/);
-        const pauseMatch = part.match(/\[PAUSE \d+ SECONDS\]/);
+        const pauseMatch = part.match(/\[PAUSE (\d+) SECONDS\]/);
 
         if (videoMatch || pauseMatch) {
             // This part is the cue, we render nothing visible for it
@@ -1706,19 +1713,15 @@ export default function Home() {
               )}
             >
               <CardContent className="p-0 flex-grow overflow-hidden rounded-lg relative">
-                {isVoiceControlOn && !voiceControlDisabled && (
-                  <div className="absolute top-4 left-4 z-10 flex items-center gap-2 pointer-events-none">
-                      <div className="h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse" />
-                      <span className={cn("text-xs font-semibold", isHighContrast ? "text-red-500" : "text-red-600")}>REC</span>
-                  </div>
-                )}
-                {upcomingCue !== null && (
-                    <div className="absolute top-4 left-20 z-10 flex items-center gap-2 pointer-events-none">
-                        <div className="h-2.5 w-2.5 rounded-full bg-green-500 animate-pulse" />
-                        <span className={cn("text-xs font-semibold", isHighContrast ? "text-green-400" : "text-green-600")}>CUE</span>
-                    </div>
-                )}
-
+                <div className="absolute top-4 left-4 z-10 flex items-center gap-2 pointer-events-none">
+                  {isPlaying && (
+                    <div className="h-2.5 w-2.5 rounded-full bg-red-500" />
+                  )}
+                  {upcomingCue !== null && (
+                    <div className="h-2.5 w-2.5 rounded-full bg-green-500" />
+                  )}
+                </div>
+                
                 {prompterMode === 'text' && (
                   <div
                     ref={displayRef}
