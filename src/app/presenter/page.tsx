@@ -73,16 +73,16 @@ export default function PresenterPage() {
   const scrollSpeedRef = useRef(settings.scrollSpeed);
 
   const mapSliderToEffectiveSpeed = (sliderValue: number): number => {
-    // This function maps the slider value (30-100) to an effective scroll speed.
-    // Based on user request:
-    // - Slider value 35 should map to an effective speed of 10.
-    // - Slider value 100 should map to an effective speed of 50 (5x the speed at 35).
-    // This creates a linear mapping.
-    // Points: (35, 10) and (100, 50)
-    const slope = (50 - 10) / (100 - 35); // 40 / 65 = 8 / 13
-    const yIntercept = 10 - slope * 35; // 10 - (8/13)*35 = -150/13
+    // This function maps the slider value (30-100) to an effective scroll speed in pixels per second.
+    // - Slider value 35 should map to an effective speed of 25 px/s.
+    // - Slider value 100 should map to an effective speed of 125 px/s (5x the speed at 35).
+    // This creates a linear mapping between these two points.
+    // Points: (35, 25) and (100, 125)
+    const slope = (125 - 25) / (100 - 35); // 100 / 65 = 20 / 13
+    const yIntercept = 25 - slope * 35; // 25 - (20/13)*35 = -375 / 13
     return slope * sliderValue + yIntercept;
   };
+
 
   useEffect(() => { scrollSpeedRef.current = settings.scrollSpeed; }, [settings.scrollSpeed]);
   
@@ -141,14 +141,14 @@ export default function PresenterPage() {
     if (!lastTimeRef.current) {
       lastTimeRef.current = timestamp;
     }
-    const deltaTime = timestamp - lastTimeRef.current;
+    const deltaTime = timestamp - lastTimeRef.current; // time in ms
     lastTimeRef.current = timestamp;
 
     if (displayRef.current) {
       const currentDisplay = displayRef.current;
       if (currentDisplay.scrollHeight > currentDisplay.clientHeight) {
-        const effectiveSpeed = mapSliderToEffectiveSpeed(scrollSpeedRef.current);
-        const scrollAmount = (effectiveSpeed / 60) * (deltaTime / (1000/60));
+        const effectiveSpeed = mapSliderToEffectiveSpeed(scrollSpeedRef.current); // px/sec
+        const scrollAmount = effectiveSpeed * (deltaTime / 1000); // px
         currentDisplay.scrollTop += scrollAmount;
       }
       
