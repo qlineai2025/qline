@@ -277,7 +277,6 @@ export default function Home() {
     }
   }, [text, fontSize, horizontalMargin, verticalMargin, isHighContrast, isFlippedHorizontally, isFlippedVertically, scrollSpeed, prompterMode, slides, currentSlideIndex, slideDisplayMode]);
 
-
   const handleSave = (setter: React.Dispatch<React.SetStateAction<number>>, value: string, min: number, max: number, popoverSetter: React.Dispatch<React.SetStateAction<boolean>>) => {
     const numValue = parseInt(value, 10);
     if (!isNaN(numValue) && numValue >= min && numValue <= max) {
@@ -399,16 +398,6 @@ export default function Home() {
         reader.readAsDataURL(blob);
     });
   };
-  
-  const handleRewind = () => {
-    if (displayRef.current) {
-        displayRef.current.scrollTop = 0;
-    }
-    channelRef.current?.postMessage({ type: "reset" });
-    if (isPlaying) {
-        setIsPlaying(false);
-    }
-  };
 
   const handleNextSlide = useCallback(() => {
     const newIndex = Math.min(currentSlideIndex + 1, slides.length - 1);
@@ -423,6 +412,115 @@ export default function Home() {
     setText(slides[newIndex]?.speakerNotes || '');
     channelRef.current?.postMessage({ type: 'slide_change', payload: { newIndex } });
   }, [currentSlideIndex, slides]);
+
+  const scrollAnimation = useCallback((timestamp: number) => {
+    if (!lastTimeRef.current) {
+      lastTimeRef.current = timestamp;
+    }
+    const deltaTime = timestamp - lastTimeRef.current;
+    lastTimeRef.current = timestamp;
+
+    if (displayRef.current) {
+      const currentDisplay = displayRef.current;
+      if (currentDisplay.scrollHeight > currentDisplay.clientHeight) {
+        const scrollAmount = (scrollSpeedRef.current / 60) * (deltaTime / (1000/60));
+        currentDisplay.scrollTop += scrollAmount;
+      }
+      
+      const isAtEnd = currentDisplay.scrollTop + currentDisplay.clientHeight >= currentDisplay.scrollHeight - 1;
+
+      if (isAtEnd) {
+        if (prompterMode === 'slides' && slideDisplayMode === 'notes' && currentSlideIndex < slides.length - 1) {
+            handleNextSlide();
+        } else {
+            setIsPlaying(false);
+        }
+      } else {
+          animationFrameRef.current = requestAnimationFrame(scrollAnimation);
+      }
+    }
+  }, [prompterMode, slideDisplayMode, currentSlideIndex, slides, handleNextSlide]);
+
+  const startScroll = useCallback(() => {
+    lastTimeRef.current = null;
+    animationFrameRef.current = requestAnimationFrame(scrollAnimation);
+  }, [scrollAnimation]);
+
+  const stopScroll = useCallback(() => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+  }, []);
+
+  const stopPlayback = useCallback(() => {
+    if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+    }
+    setCountdown(null);
+    setIsPlaying(false);
+    channelRef.current?.postMessage({ type: "pause" });
+  }, []);
+
+  const startPlayback = useCallback(() => {
+      setIsMaximized(true);
+  
+      if (displayRef.current) {
+          if (displayRef.current.scrollTop + displayRef.current.clientHeight >= displayRef.current.scrollHeight - 1) {
+              displayRef.current.scrollTop = 0;
+              channelRef.current?.postMessage({ type: "reset" });
+          }
+      }
+  
+      if (startDelay > 0) {
+          setCountdown(startDelay);
+          countdownIntervalRef.current = setInterval(() => {
+              setCountdown(prev => {
+                  if (prev === null) {
+                      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+                      return null;
+                  }
+                  if (prev <= 1) {
+                      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+                      countdownIntervalRef.current = null;
+                      setIsPlaying(true);
+                      channelRef.current?.postMessage({ type: "play" });
+                      return null;
+                  }
+                  return prev - 1;
+              });
+          }, 1000);
+      } else {
+          setIsPlaying(true);
+          channelRef.current?.postMessage({ type: "play" });
+      }
+  }, [startDelay]);
+
+  const handlePlayPause = () => {
+    if (prompterMode === 'slides' && slideDisplayMode === 'slide') return;
+
+    if (isPlaying || countdown !== null) {
+        stopPlayback();
+    } else {
+        startPlayback();
+    }
+  };
+  
+  const handleRewind = () => {
+    const wasPlaying = isPlaying;
+    
+    stopPlayback();
+    
+    if (displayRef.current) {
+        displayRef.current.scrollTop = 0;
+    }
+    channelRef.current?.postMessage({ type: "reset" });
+
+    if (wasPlaying) {
+        startPlayback();
+    }
+  };
 
   const updatePositionFromSpeech = useCallback(async () => {
     if (audioChunksRef.current.length === 0) return;
@@ -488,13 +586,11 @@ export default function Home() {
             }
             break;
         case 'stop_scrolling':
-            setIsPlaying(false);
-            channelRef.current?.postMessage({ type: "pause" });
+            if (isPlaying || countdown !== null) stopPlayback();
             break;
         case 'start_scrolling':
-             if (!playPauseDisabled) {
-                setIsPlaying(true);
-                channelRef.current?.postMessage({ type: "play" });
+             if (!playPauseDisabled && !isPlaying && countdown === null) {
+                startPlayback();
             }
             break;
         case 'rewind':
@@ -535,7 +631,7 @@ export default function Home() {
                 handleNextSlide();
                 return; 
               } else {
-                setIsPlaying(false);
+                if (isPlaying) stopPlayback();
               }
             }
 
@@ -557,7 +653,7 @@ export default function Home() {
     } finally {
       setIsProcessingAudio(false);
     }
-  }, [text, toast, prompterMode, slideDisplayMode, currentSlideIndex, slides, handleNextSlide, handlePrevSlide, isPlaying, isLogging]);
+  }, [text, toast, prompterMode, slideDisplayMode, currentSlideIndex, slides, handleNextSlide, handlePrevSlide, isPlaying, isLogging, startPlayback, stopPlayback, countdown]);
 
   const startRecording = useCallback(() => {
     navigator.mediaDevices.getUserMedia({ audio: true })
@@ -603,46 +699,6 @@ export default function Home() {
       mediaRecorderRef.current = null;
     }
     audioChunksRef.current = [];
-  }, []);
-
-  const scrollAnimation = useCallback((timestamp: number) => {
-    if (!lastTimeRef.current) {
-      lastTimeRef.current = timestamp;
-    }
-    const deltaTime = timestamp - lastTimeRef.current;
-    lastTimeRef.current = timestamp;
-
-    if (displayRef.current) {
-      const currentDisplay = displayRef.current;
-      if (currentDisplay.scrollHeight > currentDisplay.clientHeight) {
-        const scrollAmount = (scrollSpeedRef.current / 60) * (deltaTime / (1000/60));
-        currentDisplay.scrollTop += scrollAmount;
-      }
-      
-      const isAtEnd = currentDisplay.scrollTop + currentDisplay.clientHeight >= currentDisplay.scrollHeight - 1;
-
-      if (isAtEnd) {
-        if (prompterMode === 'slides' && slideDisplayMode === 'notes' && currentSlideIndex < slides.length - 1) {
-            handleNextSlide();
-        } else {
-            setIsPlaying(false);
-        }
-      } else {
-          animationFrameRef.current = requestAnimationFrame(scrollAnimation);
-      }
-    }
-  }, [prompterMode, slideDisplayMode, currentSlideIndex, slides, handleNextSlide]);
-
-  const startScroll = useCallback(() => {
-    lastTimeRef.current = null;
-    animationFrameRef.current = requestAnimationFrame(scrollAnimation);
-  }, [scrollAnimation]);
-
-  const stopScroll = useCallback(() => {
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
-    }
   }, []);
 
   useEffect(() => {
@@ -704,53 +760,6 @@ export default function Home() {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isMaximized, isSpeedPopoverOpen, isFontSizePopoverOpen, isHorizontalMarginPopoverOpen, isVerticalMarginPopoverOpen, isDelayPopoverOpen, contextMenu]);
-
-  const handlePlayPause = () => {
-    if (prompterMode === 'slides' && slideDisplayMode === 'slide') return;
-
-    // This handles pausing if playing or if a countdown is active
-    if (isPlaying || countdown !== null) {
-      if (countdownIntervalRef.current) {
-        clearInterval(countdownIntervalRef.current);
-        countdownIntervalRef.current = null;
-      }
-      setCountdown(null);
-      setIsPlaying(false);
-      channelRef.current?.postMessage({ type: "pause" });
-      return;
-    }
-    
-    // This handles playing from a paused state
-    setIsMaximized(true);
-    if (displayRef.current) {
-      if (displayRef.current.scrollTop + displayRef.current.clientHeight >= displayRef.current.scrollHeight - 1) {
-        handleRewind();
-      }
-    }
-
-    if (startDelay > 0) {
-      setCountdown(startDelay);
-      countdownIntervalRef.current = setInterval(() => {
-        setCountdown(prev => {
-          if (prev === null) { // Safety check
-            if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-            return null;
-          }
-          if (prev <= 1) {
-            if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-            countdownIntervalRef.current = null;
-            setIsPlaying(true);
-            channelRef.current?.postMessage({ type: "play" });
-            return null;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else {
-      setIsPlaying(true);
-      channelRef.current?.postMessage({ type: "play" });
-    }
-  };
   
   const popoverContentClass = "w-[150px] p-2";
   
