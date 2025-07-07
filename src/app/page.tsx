@@ -1756,7 +1756,7 @@ export default function Home() {
                       className="w-full min-h-full flex justify-center m-auto"
                        style={{
                         paddingTop: `${verticalMargin}%`,
-                        paddingBottom: '50vh',
+                        paddingBottom: `calc(100vh - ${verticalMargin}%)`,
                       }}
                     >
                       <div
@@ -1809,7 +1809,7 @@ export default function Home() {
                           className="w-full min-h-full flex justify-center m-auto"
                            style={{
                             paddingTop: `${verticalMargin}%`,
-                            paddingBottom: '50vh',
+                            paddingBottom: `calc(100vh - ${verticalMargin}%)`,
                           }}
                         >
                           <div
@@ -2044,5 +2044,3 @@ export default function Home() {
     </main>
   );
 }
-
-    

@@ -17,6 +17,7 @@ interface PresenterSettings {
   prompterMode: 'text' | 'slides';
   slides: GoogleSlideContent[];
   currentSlideIndex: number;
+  slideDisplayMode: 'slide' | 'notes';
 }
 
 const DEFAULT_SETTINGS: PresenterSettings = {
@@ -31,23 +32,35 @@ const DEFAULT_SETTINGS: PresenterSettings = {
   prompterMode: 'text',
   slides: [],
   currentSlideIndex: 0,
+  slideDisplayMode: 'slide',
 };
 
 function processedTextForPresenter(text: string) {
-    const words = text.split(/(\s+)/);
+    const regex = /(\[PLAY VIDEO \d+\]|\[PAUSE \d+ SECONDS\])/g;
+    const parts = text.split(regex);
+    const elements: React.ReactNode[] = [];
     let wordCount = 0;
-    return words.map((word, index) => {
-      if (word.trim().length > 0) {
-        const wordIndex = wordCount;
-        wordCount++;
-        return (
-          <span key={index} id={`presenter-word-${wordIndex}`}>
-            {word}
-          </span>
-        );
-      }
-      return <span key={index}>{word}</span>;
+    let partKey = 0;
+
+    parts.forEach((part) => {
+        if (part.match(regex)) {
+            // This part is a cue, render nothing visible for it
+        } else {
+            const words = part.split(/(\s+)/);
+            words.forEach((word, wordKey) => {
+                if (word.trim().length > 0) {
+                    const currentWordIndex = wordCount;
+                    wordCount++;
+                    elements.push(<span key={`presenter-word-${partKey}-${wordKey}`} id={`presenter-word-${currentWordIndex}`}>{word}</span>);
+                } else {
+                    elements.push(<span key={`presenter-space-${partKey}-${wordKey}`}>{word}</span>);
+                }
+            });
+        }
+        partKey++;
     });
+
+    return elements;
 }
 
 export default function PresenterPage() {
@@ -92,8 +105,20 @@ export default function PresenterPage() {
           targetWord?.scrollIntoView({ behavior: 'smooth', block: 'center' });
           break;
         case 'slide_change':
-          setSettings(s => ({ ...s, currentSlideIndex: payload.newIndex }));
-          break;
+           setSettings(s => {
+                const newSettings = {...s, ...payload};
+                // When slide changes, presenter view always shows the slide image first
+                newSettings.slideDisplayMode = 'slide'; 
+                // Then, get text from the main window's settings
+                try {
+                    const mainSettings = localStorage.getItem('teleprompter_settings');
+                    if(mainSettings) {
+                        newSettings.text = JSON.parse(mainSettings).text;
+                    }
+                } catch(e) {}
+                return newSettings;
+            });
+            break;
       }
     };
 
@@ -135,68 +160,78 @@ export default function PresenterPage() {
   }, []);
 
   useEffect(() => {
-    // In presenter mode, scrolling only happens for text, never for slides/notes.
-    if (isPlaying && settings.prompterMode === 'text') {
+    const shouldScroll = isPlaying && (settings.prompterMode === 'text' || (settings.prompterMode === 'slides' && settings.slideDisplayMode === 'notes'));
+    if (shouldScroll) {
       startScroll();
     } else {
       stopScroll();
     }
     return stopScroll;
-  }, [isPlaying, startScroll, stopScroll, settings.prompterMode]);
+  }, [isPlaying, startScroll, stopScroll, settings.prompterMode, settings.slideDisplayMode]);
 
+  const PrompterContent = () => (
+    <div
+      ref={displayRef}
+      className={cn(
+        "h-full overflow-y-auto",
+        settings.isHighContrast && "bg-black",
+        settings.isFlippedHorizontally && "scale-x-[-1]",
+        settings.isFlippedVertically && "scale-y-[-1]"
+      )}
+      style={{
+        paddingLeft: `${settings.horizontalMargin}%`,
+        paddingRight: `${settings.horizontalMargin}%`,
+      }}
+    >
+      <div
+        className="w-full min-h-full flex justify-center m-auto"
+        style={{
+          paddingTop: `${settings.verticalMargin}%`,
+          paddingBottom: `calc(100vh - ${settings.verticalMargin}%)`,
+        }}
+      >
+        <div
+          className={cn(
+            "whitespace-pre-wrap break-words m-auto",
+            settings.isHighContrast ? "text-white" : "text-foreground"
+          )}
+          style={{
+            fontSize: `${settings.fontSize}px`,
+            lineHeight: 1.5,
+          }}
+        >
+          {processedTextForPresenter(settings.text)}
+        </div>
+      </div>
+    </div>
+  );
+
+  const SlideContent = () => {
+    if (!settings.slides || settings.slides.length === 0) return null;
+    return (
+       <div
+        className={cn(
+          "h-full w-full flex items-center justify-center",
+          settings.isHighContrast && "bg-black",
+          settings.isFlippedHorizontally && "scale-x-[-1]",
+          settings.isFlippedVertically && "scale-y-[-1]"
+        )}
+      >
+        <img
+          src={settings.slides[settings.currentSlideIndex]?.imageUrl}
+          alt={`Slide ${settings.currentSlideIndex + 1}`}
+          className="max-w-full max-h-full object-contain"
+        />
+      </div>
+    );
+  };
+  
   return (
     <main className="h-screen w-screen bg-black overflow-hidden">
-        {settings.prompterMode === 'text' ? (
-            <div
-                ref={displayRef}
-                className={cn(
-                "h-full overflow-y-auto",
-                settings.isHighContrast && "bg-black",
-                settings.isFlippedHorizontally && "scale-x-[-1]",
-                settings.isFlippedVertically && "scale-y-[-1]"
-                )}
-                style={{
-                paddingLeft: `${settings.horizontalMargin}%`,
-                paddingRight: `${settings.horizontalMargin}%`,
-                }}
-            >
-                <div
-                className="w-full min-h-full flex justify-center m-auto"
-                    style={{
-                    paddingTop: `${settings.verticalMargin}%`,
-                    paddingBottom: '20%',
-                }}
-                >
-                <div
-                    className={cn(
-                    "whitespace-pre-wrap break-words m-auto",
-                    settings.isHighContrast ? "text-white" : "text-foreground"
-                    )}
-                    style={{
-                    fontSize: `${settings.fontSize}px`,
-                    lineHeight: 1.5,
-                    }}
-                >
-                    {processedTextForPresenter(settings.text)}
-                </div>
-                </div>
-            </div>
-        ) : settings.slides?.length > 0 ? (
-            <div
-                className={cn(
-                "h-full w-full flex items-center justify-center",
-                settings.isHighContrast && "bg-black",
-                settings.isFlippedHorizontally && "scale-x-[-1]",
-                settings.isFlippedVertically && "scale-y-[-1]"
-                )}
-            >
-                <img
-                    src={settings.slides[settings.currentSlideIndex]?.imageUrl}
-                    alt={`Slide ${settings.currentSlideIndex + 1}`}
-                    className="max-w-full max-h-full object-contain"
-                />
-            </div>
-        ) : null}
+        {settings.prompterMode === 'text' && <PrompterContent />}
+        {settings.prompterMode === 'slides' && (
+          settings.slideDisplayMode === 'notes' ? <PrompterContent /> : <SlideContent />
+        )}
     </main>
   );
 }
