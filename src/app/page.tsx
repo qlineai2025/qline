@@ -20,6 +20,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
   Tooltip,
@@ -63,6 +64,8 @@ import {
   ChevronRight,
   NotebookText,
   Rewind,
+  ClipboardList,
+  Download,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -102,6 +105,12 @@ interface SavedSetting {
   fontSize: number;
   horizontalMargin: number;
   verticalMargin: number;
+}
+
+interface CommandLogEntry {
+  timestamp: Date;
+  command: string;
+  details: string;
 }
 
 
@@ -154,6 +163,9 @@ export default function Home() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; selectionStart: number; selectionEnd: number; } | null>(null);
+
+  const [isLogging, setIsLogging] = useState<boolean>(false);
+  const [commandLog, setCommandLog] = useState<CommandLogEntry[]>([]);
 
   const displayRef = useRef<HTMLDivElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -418,12 +430,37 @@ export default function Home() {
           currentSlideIndex,
       };
       
-      const { command, slideNumber, targetWordIndex, modifiedScript, lastSpokenWordIndex, adjustedScrollSpeed } = await controlTeleprompter({
+      const result = await controlTeleprompter({
         audioDataUri,
         scriptText: text,
         currentScrollSpeed: scrollSpeedRef.current,
         prompterState,
       });
+
+      if (isLogging) {
+        const timestamp = new Date();
+        const { command, slideNumber, targetWordIndex, lastSpokenWordIndex, adjustedScrollSpeed } = result;
+
+        let details = '';
+        switch (command) {
+            case 'next_slide': details = 'N/A'; break;
+            case 'previous_slide': details = 'N/A'; break;
+            case 'go_to_slide': details = `Slide ${slideNumber || 'N/A'}`; break;
+            case 'stop_scrolling': details = 'N/A'; break;
+            case 'start_scrolling': details = 'N/A'; break;
+            case 'rewind': details = 'N/A'; break;
+            case 'go_to_text': details = `Word index ${targetWordIndex || 'N/A'}`; break;
+            case 'edit_text': details = 'Script modified via voice'; break;
+            case 'no_op': 
+            default:
+                details = `Pace tracking. Speed: ${adjustedScrollSpeed?.toFixed(2)}, Word Index: ${lastSpokenWordIndex}`;
+                break;
+        }
+
+        setCommandLog(prev => [...prev, { timestamp, command, details }]);
+      }
+      
+      const { command, slideNumber, targetWordIndex, modifiedScript, lastSpokenWordIndex, adjustedScrollSpeed } = result;
 
       switch (command) {
         case 'next_slide':
@@ -510,7 +547,7 @@ export default function Home() {
     } finally {
       setIsProcessingAudio(false);
     }
-  }, [text, toast, prompterMode, slideDisplayMode, currentSlideIndex, slides, handleNextSlide, handlePrevSlide, isPlaying]);
+  }, [text, toast, prompterMode, slideDisplayMode, currentSlideIndex, slides, handleNextSlide, handlePrevSlide, isPlaying, isLogging]);
 
   const startRecording = useCallback(() => {
     navigator.mediaDevices.getUserMedia({ audio: true })
@@ -830,6 +867,66 @@ export default function Home() {
     }
   }, [scrollSpeed, fontSize, horizontalMargin, verticalMargin, loadedSettingName, savedSettings]);
 
+  const handleToggleLogging = () => {
+    const nextState = !isLogging;
+    if (nextState) { // Turning logging ON
+        toast({ title: "Command logging enabled." });
+        setCommandLog([]); // Clear previous log and start fresh
+    } else {
+        toast({ title: "Command logging disabled." });
+    }
+    setIsLogging(nextState);
+  };
+
+  const downloadLog = (format: 'csv' | 'srt') => {
+    if (commandLog.length === 0) {
+        toast({ title: 'No log entries to download.' });
+        return;
+    }
+
+    let content = '';
+    let fileExtension = '';
+    let mimeType = '';
+
+    if (format === 'csv') {
+        fileExtension = 'csv';
+        mimeType = 'text/csv;charset=utf-8;';
+        const header = 'Timestamp,Command,Details\n';
+        const rows = commandLog.map(log => 
+            `${log.timestamp.toISOString()},${log.command},"${log.details.replace(/"/g, '""')}"`
+        ).join('\n');
+        content = header + rows;
+    } else { // srt
+        fileExtension = 'srt';
+        mimeType = 'application/x-subrip;charset=utf-8;';
+        content = commandLog.map((log, index) => {
+            const startTime = log.timestamp;
+            const endTime = new Date(startTime.getTime() + 2000); // Assume 2s duration for the command display
+            
+            const toSrtTime = (date: Date) => {
+                const h = String(date.getUTCHours()).padStart(2, '0');
+                const m = String(date.getUTCMinutes()).padStart(2, '0');
+                const s = String(date.getUTCSeconds()).padStart(2, '0');
+                const ms = String(date.getUTCMilliseconds()).padStart(3, '0');
+                return `${h}:${m}:${s},${ms}`;
+            };
+
+            return `${index + 1}\n${toSrtTime(startTime)} --> ${toSrtTime(endTime)}\n${log.command}: ${log.details}\n`;
+        }).join('\n');
+    }
+
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `cuepilot_log_${new Date().toISOString()}.${fileExtension}`;
+    document.body.appendChild(a);
+a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+
   const playPauseDisabled = prompterMode === 'slides' && slideDisplayMode === 'slide';
   const voiceControlDisabled = playPauseDisabled;
   const speedSliderDisabled = isVoiceControlOn || playPauseDisabled;
@@ -889,6 +986,39 @@ export default function Home() {
                             </TooltipTrigger>
                             <TooltipContent><p>Assist Mode</p></TooltipContent>
                         </Tooltip>
+                         <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={handleToggleLogging}>
+                                    <ClipboardList className={cn(isLogging && "text-accent")} />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>{isLogging ? 'Stop Command Logging' : 'Start Command Logging'}</p></TooltipContent>
+                        </Tooltip>
+                        {commandLog.length > 0 && (
+                            <DropdownMenu>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="text-accent">
+                                                <Download />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                    </TooltipTrigger>
+                                    <TooltipContent><p>Download Log</p></TooltipContent>
+                                </Tooltip>
+                                <DropdownMenuContent>
+                                    <DropdownMenuItem onClick={() => downloadLog('csv')}>Download as .CSV</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => downloadLog('srt')}>Download as .SRT</DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem 
+                                        className="!text-destructive focus:bg-destructive/10" 
+                                        onClick={() => setCommandLog([])}
+                                    >
+                                        Clear Log
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
                         {prompterMode === 'slides' && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
