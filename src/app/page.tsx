@@ -105,7 +105,7 @@ You can also get AI help. Just select some text and right-click to rewrite it, f
 Enjoy your flawless presentation!`;
 
 const DEFAULT_SETTINGS = {
-  scrollSpeed: 30,
+  scrollSpeed: 35,
   fontSize: 40,
   horizontalMargin: 20,
   verticalMargin: 40,
@@ -151,6 +151,7 @@ export default function Home() {
   const [isEditorExpanded, setIsEditorExpanded] = useState<boolean>(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [areCuesEnabled, setAreCuesEnabled] = useState<boolean>(true);
+  const [isIndicatorVisible, setIsIndicatorVisible] = useState<boolean>(true);
   
   const [prompterMode, setPrompterMode] = useState<'text' | 'slides'>('text');
   const [slideDisplayMode, setSlideDisplayMode] = useState<'slide' | 'notes'>('slide');
@@ -1713,12 +1714,27 @@ export default function Home() {
               )}
             >
               <CardContent className="p-0 flex-grow overflow-hidden rounded-lg relative">
-                <div className="absolute top-4 left-4 z-10 flex items-center gap-2 pointer-events-none">
-                  {isPlaying && (
-                    <div className="h-2.5 w-2.5 rounded-full bg-red-500" />
-                  )}
+                <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div
+                          className="h-5 w-5 flex items-center justify-center cursor-pointer rounded-full"
+                          onClick={() => setIsIndicatorVisible(!isIndicatorVisible)}
+                        >
+                          {isPlaying && isIndicatorVisible && (
+                            <div className="h-2.5 w-2.5 rounded-full bg-red-500" />
+                          )}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="right">
+                        <p>{isIndicatorVisible ? 'Hide Indicator' : 'Show Indicator'}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+
                   {upcomingCue !== null && (
-                    <div className="h-2.5 w-2.5 rounded-full bg-green-500" />
+                    <div className="h-2.5 w-2.5 rounded-full bg-green-500 pointer-events-none" />
                   )}
                 </div>
                 
