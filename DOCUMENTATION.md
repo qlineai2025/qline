@@ -10,6 +10,7 @@ This guide will walk you through all the features of CuePilot AI.
 
 *   **Pasting Your Script**: The primary way to get your text into the prompter is by using the **Script Editor** at the bottom of the screen. Simply click into the text area and paste or type your script. The prompter display will update in real-time.
 *   **Importing from Google**: You can sign in with your Google account to enable import options. Currently, you can import from Google Docs and Google Slides.
+*   **Set Your API Key**: To unlock the AI-powered features (like Voice Control and AI Editing), you must add your Google AI API key to the `.env` file in the project.
 
 ### Main Controls
 
@@ -19,7 +20,7 @@ Located in the top-left of the control panel:
     *   If you are not signed in, this button allows you to sign in with Google.
     *   Once signed in, this button becomes an "Import" dropdown, providing options to import scripts from your Google Drive.
 *   **Play / Pause Button**:
-    *   Press **Play** to start the teleprompter. This will automatically switch the prompter to full-screen mode for an immersive experience.
+    *   Press **Play** to start the teleprompter. This will automatically switch the prompter to full-screen mode and initiate a start delay countdown if one is set.
     *   Press **Pause** to stop the scrolling.
 
 ### Display & Functionality Toggles
@@ -33,11 +34,15 @@ These icon-based buttons give you control over the teleprompter's functionality 
     *   **Pace Matching & Position Tracking**: If no command is detected, the AI falls back to its original behavior: it intelligently matches the scrolling speed to your reading pace and periodically re-centers the view on the last word you spoke.
     *   **Automatic Slide Navigation**: When in "Notes View" for a presentation, the prompter will automatically advance to the next slide once you've finished reading all the notes for the current one.
 *   **Assist Mode (ScreenShare Icon)**: This button opens a clean, secondary prompter window. You can drag this window to a second monitor and make it full-screen. It stays perfectly in sync with the main window's text, settings, and scrolling.
+*   **Start Delay (Timer Icon)**: Click this icon to open a popover and set a countdown delay (in seconds). When you press play, a large countdown will appear on-screen before the scrolling begins. This gives you time to get ready. The default is 3 seconds.
+*   **Command Logging (ClipboardList Icon)**: Toggles the command logging feature. When active, every voice command, pause, resume, or jump is captured with a timestamp and a "take" number. This is invaluable for reviewing a session or preparing a video for editing.
+*   **Download Log (Download Icon)**: This button becomes active once you have logged at least one command. Clicking it reveals a menu to download the session log as a `.CSV` file (for spreadsheets) or a `.SRT` file (a standard subtitle format perfect for video editing timelines).
+*   **Audio Input (AudioLines Icon)**: Click this icon to open a popover listing all available microphones connected to your computer. This allows you to easily switch between your system default, a USB mic, or other audio inputs without leaving the app.
 *   **Notes View (NotebookText Icon)**: When a Google Slides presentation is loaded, this button appears. It allows you to toggle the main prompter display between showing the full slide image and showing the speaker notes for that slide as scrollable text.
 
 #### Controls on the Prompter View
 These controls are overlaid on the bottom-right of the prompter display area. They have a subtle, semi-transparent style to ensure they are visible on any background.
-*   **Rewind (Rewind Icon)**: Instantly stops playback and scrolls the teleprompter content to the very top.
+*   **Rewind (Rewind Icon)**: Instantly stops playback and scrolls the teleprompter content to the very top. If playback was active, it will automatically re-initiate the countdown and start again. This action also marks the beginning of a new **take** in the command log.
 *   **High Contrast (Contrast Icon)**: Toggles the display between standard mode (black text on a light background) and high-contrast mode (white text on a black background).
 *   **Flip Horizontal (ArrowLeftRight Icon)**: Mirrors the prompter text horizontally. This is essential for use with physical teleprompter hardware that uses a mirror.
 *   **Flip Vertical (ArrowUpDown Icon)**: Flips the prompter text vertically.
@@ -78,6 +83,13 @@ The script editor is located at the bottom of the page and includes several powe
     *   Rewrite the selection for clarity and impact
     *   Format the selection for better readability
 
+### Production & Logging
+
+CuePilot AI includes features designed for a professional production workflow, particularly for video recording and editing.
+
+*   **Understanding "Takes"**: The app automatically tracks your performance in "takes." A new take is started whenever you resume from a pause, use the rewind function, or jump to a different part of the script with your voice. This creates a granular record of every continuous performance segment.
+*   **Log Files for Editing**: By enabling **Command Logging**, you can export this performance data as a `.SRT` file. When imported into video editing software like Adobe Premiere Pro, this file will place markers on your timeline for every take, pause, and command, dramatically speeding up the editing process.
+
 ### User Profile
 
 When signed in, your profile picture and email will appear at the bottom of the control panel, with a button to sign out.
@@ -100,14 +112,15 @@ The application is designed around a **compact, efficient, and intuitive layout*
 
 #### 1. Compact, Icon-Driven Control Panel
 The left-hand control panel is designed to be clear and unobtrusive.
-*   **Icons as Controls**: Toggles and identifiers are represented by icons. This saves space and creates a clean, modern aesthetic. The preset management system (Load, Save, Reset) is also integrated directly into the settings header using icons.
+*   **Icons as Controls**: Toggles and identifiers are represented by icons (`Mic`, `ScreenShare`, `Timer`, `ClipboardList`). This saves space and creates a clean, modern aesthetic. The preset management system (Load, Save, Reset) is also integrated directly into the settings header using icons.
 *   **Tooltips for Clarity**: To ensure usability, all icon-only buttons are wrapped in a `<Tooltip>`. Hovering over an icon reveals its function.
 *   **Vertical Sliders**: Sliders are oriented vertically to fit the panel.
 
 #### 2. Popovers for Precise & Complex Input
 To allow for advanced user input without using disruptive modals:
-*   **Precise Value Input**: Clicking a slider's icon opens a lightweight `<Popover>` to type an exact number.
+*   **Precise Value Input**: Clicking a slider's icon or the `Timer` icon opens a lightweight `<Popover>` to type an exact number.
 *   **Preset Management**: More complex popovers are used for saving and loading setting presets. The "Save" popover features an inline, headerless input for a seamless experience. The "Load" popover contains a list, a search field, and delete functionality, creating a mini-dashboard for managing presets.
+*   **Device Selection**: The `AudioLines` popover provides a simple radio-button list for selecting an input device.
 
 #### 3. Overlay Controls on Prompter Area
 To keep essential display controls accessible without cluttering the main panel, key toggles (`Rewind`, `High Contrast`, `Flip`, `Full Screen`) are placed as overlay buttons on the bottom-right of the prompter itself.
@@ -131,8 +144,8 @@ The second-screen "Assist Mode" is architected for robust, real-time synchroniza
 *   **Event-Driven Sync**: Any action in the main window—playing/pausing, changing settings, editing the script, or a new scroll position from voice control—posts a message to the channel. The presenter window listens for these messages and updates its display instantly.
 
 #### 7. AI-Powered Voice Control
-The voice control feature is an advanced AI system that interprets user speech for one of two purposes: command execution or pace tracking.
-*   **Command-First Architecture**: The application sends audio snippets to a Genkit AI flow (`controlTeleprompter`). This flow is prompted to first check for specific verbal commands (e.g., "next slide", "pause", "go back to [text]"). Commands are given top priority.
+The voice control feature is an advanced AI system that interprets user speech for one of three purposes: command execution, script editing, or pace tracking.
+*   **Command-First Architecture**: The application sends audio snippets to a Genkit AI flow (`controlTeleprompter`). This flow is prompted to first check for specific verbal commands (e.g., "next slide," "pause") or editing commands (e.g., "change this to that"). Commands are given top priority.
 *   **Fallback to Pace Tracking**: If the AI determines the user is not giving a command, it treats the audio as script reading. It then performs the pace-tracking function: it returns both an `adjustedScrollSpeed` based on the user's reading pace and the `lastSpokenWordIndex` to keep the prompter perfectly synchronized.
 *   **State-Aware Logic**: The flow is also sent the current state of the prompter (e.g., `isPlaying`, `prompterMode`, `currentSlideIndex`), allowing it to make intelligent decisions based on context. For example, "next slide" only has an effect if `prompterMode` is 'slides'.
 
