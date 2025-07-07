@@ -66,6 +66,7 @@ import {
   Rewind,
   ClipboardList,
   Download,
+  Timer,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -96,6 +97,7 @@ const DEFAULT_SETTINGS = {
   fontSize: 40,
   horizontalMargin: 20,
   verticalMargin: 18,
+  startDelay: 3,
 };
 
 interface SavedSetting {
@@ -123,6 +125,7 @@ export default function Home() {
   const [fontSize, setFontSize] = useState<number>(DEFAULT_SETTINGS.fontSize);
   const [horizontalMargin, setHorizontalMargin] = useState<number>(DEFAULT_SETTINGS.horizontalMargin);
   const [verticalMargin, setVerticalMargin] = useState<number>(DEFAULT_SETTINGS.verticalMargin);
+  const [startDelay, setStartDelay] = useState<number>(DEFAULT_SETTINGS.startDelay);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [isVoiceControlOn, setIsVoiceControlOn] = useState<boolean>(true);
   const [isProcessingAudio, setIsProcessingAudio] = useState<boolean>(false);
@@ -133,6 +136,7 @@ export default function Home() {
   const [isPresenterModeActive, setIsPresenterModeActive] = useState(false);
   const [isAiEditing, setIsAiEditing] = useState(false);
   const [isEditorExpanded, setIsEditorExpanded] = useState<boolean>(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
   
   const [prompterMode, setPrompterMode] = useState<'text' | 'slides'>('text');
   const [slideDisplayMode, setSlideDisplayMode] = useState<'slide' | 'notes'>('slide');
@@ -150,6 +154,9 @@ export default function Home() {
   
   const [isVerticalMarginPopoverOpen, setIsVerticalMarginPopoverOpen] = useState(false);
   const [verticalMarginInput, setVerticalMarginInput] = useState(String(verticalMargin));
+
+  const [isDelayPopoverOpen, setIsDelayPopoverOpen] = useState(false);
+  const [delayInput, setDelayInput] = useState(String(startDelay));
 
   const [isDocPickerOpen, setIsDocPickerOpen] = useState(false);
   const [isSlidePickerOpen, setIsSlidePickerOpen] = useState(false);
@@ -171,6 +178,7 @@ export default function Home() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   const animationFrameRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number | null>(null);
@@ -185,6 +193,8 @@ export default function Home() {
   useEffect(() => { setFontSizeInput(String(fontSize)) }, [fontSize]);
   useEffect(() => { setHorizontalMarginInput(String(horizontalMargin)) }, [horizontalMargin]);
   useEffect(() => { setVerticalMarginInput(String(verticalMargin)) }, [verticalMargin]);
+  useEffect(() => { setDelayInput(String(startDelay)) }, [startDelay]);
+
 
   // Load saved settings from localStorage on mount
   useEffect(() => {
@@ -666,6 +676,15 @@ export default function Home() {
     }
   }, [text]);
 
+  // Effect for cleaning up countdown interval
+  useEffect(() => {
+    return () => {
+        if (countdownIntervalRef.current) {
+            clearInterval(countdownIntervalRef.current);
+        }
+    };
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -674,6 +693,7 @@ export default function Home() {
         if(isFontSizePopoverOpen) setIsFontSizePopoverOpen(false);
         if(isHorizontalMarginPopoverOpen) setIsHorizontalMarginPopoverOpen(false);
         if(isVerticalMarginPopoverOpen) setIsVerticalMarginPopoverOpen(false);
+        if(isDelayPopoverOpen) setIsDelayPopoverOpen(false);
         if (contextMenu) setContextMenu(null);
       }
     };
@@ -683,21 +703,53 @@ export default function Home() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isMaximized, isSpeedPopoverOpen, isFontSizePopoverOpen, isHorizontalMarginPopoverOpen, isVerticalMarginPopoverOpen, contextMenu]);
+  }, [isMaximized, isSpeedPopoverOpen, isFontSizePopoverOpen, isHorizontalMarginPopoverOpen, isVerticalMarginPopoverOpen, isDelayPopoverOpen, contextMenu]);
 
   const handlePlayPause = () => {
     if (prompterMode === 'slides' && slideDisplayMode === 'slide') return;
-    const newIsPlaying = !isPlaying;
-    if (newIsPlaying) {
-      setIsMaximized(true);
-      if (displayRef.current) {
-        if (displayRef.current.scrollTop + displayRef.current.clientHeight >= displayRef.current.scrollHeight - 1) {
-          handleRewind();
-        }
+
+    // This handles pausing if playing or if a countdown is active
+    if (isPlaying || countdown !== null) {
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+      }
+      setCountdown(null);
+      setIsPlaying(false);
+      channelRef.current?.postMessage({ type: "pause" });
+      return;
+    }
+    
+    // This handles playing from a paused state
+    setIsMaximized(true);
+    if (displayRef.current) {
+      if (displayRef.current.scrollTop + displayRef.current.clientHeight >= displayRef.current.scrollHeight - 1) {
+        handleRewind();
       }
     }
-    setIsPlaying(newIsPlaying);
-    channelRef.current?.postMessage({ type: newIsPlaying ? "play" : "pause" });
+
+    if (startDelay > 0) {
+      setCountdown(startDelay);
+      countdownIntervalRef.current = setInterval(() => {
+        setCountdown(prev => {
+          if (prev === null) { // Safety check
+            if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+            return null;
+          }
+          if (prev <= 1) {
+            if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+            countdownIntervalRef.current = null;
+            setIsPlaying(true);
+            channelRef.current?.postMessage({ type: "play" });
+            return null;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      setIsPlaying(true);
+      channelRef.current?.postMessage({ type: "play" });
+    }
   };
   
   const popoverContentClass = "w-[150px] p-2";
@@ -724,6 +776,7 @@ export default function Home() {
     setFontSize(DEFAULT_SETTINGS.fontSize);
     setHorizontalMargin(DEFAULT_SETTINGS.horizontalMargin);
     setVerticalMargin(DEFAULT_SETTINGS.verticalMargin);
+    setStartDelay(DEFAULT_SETTINGS.startDelay);
     setLoadedSettingName(null);
     toast({ title: "Settings Reset", description: "All settings have been reset to their default values." });
   };
@@ -825,7 +878,7 @@ export default function Home() {
         description: error.message || "Could not clean up the script.",
       });
     } finally {
-      setIsAiEditing(false);
+        setIsAiEditing(false);
     }
   };
 
@@ -964,8 +1017,8 @@ a.click();
                       )}
                       
                       <Button onClick={handlePlayPause} className="w-full" disabled={playPauseDisabled}>
-                        {isPlaying ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
-                        {isPlaying ? "Pause" : "Play"}
+                        {isPlaying || countdown !== null ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
+                        {isPlaying || countdown !== null ? "Pause" : "Play"}
                       </Button>
                     </div>
 
@@ -986,6 +1039,30 @@ a.click();
                             </TooltipTrigger>
                             <TooltipContent><p>Assist Mode</p></TooltipContent>
                         </Tooltip>
+                        <Popover open={isDelayPopoverOpen} onOpenChange={setIsDelayPopoverOpen}>
+                          <Tooltip>
+                              <TooltipTrigger asChild>
+                                  <PopoverTrigger asChild>
+                                      <Button variant="ghost" size="icon"><Timer /></Button>
+                                  </PopoverTrigger>
+                              </TooltipTrigger>
+                              <TooltipContent><p>Start Delay: {startDelay}s</p></TooltipContent>
+                          </Tooltip>
+                          <PopoverContent className={popoverContentClass}
+                          onPointerDownOutside={() => handleSave(setStartDelay, delayInput, 0, 10, setIsDelayPopoverOpen)}>
+                              <Input
+                                  id="delay-input"
+                                  type="number"
+                                  value={delayInput}
+                                  onChange={(e) => setDelayInput(e.target.value)}
+                                  min={0}
+                                  max={10}
+                                  onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handleSave(setStartDelay, delayInput, 0, 10, setIsDelayPopoverOpen)
+                                  }}
+                              />
+                          </PopoverContent>
+                        </Popover>
                          <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button variant="ghost" size="icon" onClick={handleToggleLogging}>
@@ -1429,6 +1506,11 @@ a.click();
                 )}
               </CardContent>
             </Card>
+             {countdown !== null && (
+                <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/30 pointer-events-none">
+                    <span className="text-white font-bold text-9xl drop-shadow-lg animate-ping">{countdown}</span>
+                </div>
+            )}
             <div className="absolute bottom-4 right-4 z-10 flex flex-col items-end gap-2">
               <TooltipProvider>
                 <Tooltip>
