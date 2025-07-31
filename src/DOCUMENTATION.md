@@ -35,7 +35,7 @@ These icon-based buttons give you control over the teleprompter's functionality 
     *   **Automatic Slide Navigation**: When in "Notes View" for a presentation, the prompter will automatically advance to the next slide once you've finished reading all the notes for the current one.
 *   **Assist Mode (ScreenShare Icon)**: This button opens a clean, secondary prompter window. You can drag this window to a second monitor and make it full-screen. It stays perfectly in sync with the main window's text, settings, and scrolling.
 *   **Start Delay (Timer Icon)**: Click this icon to open a popover and set a countdown delay (in seconds). When you press play, a large countdown will appear on-screen before the scrolling begins. This gives you time to get ready. The default is 3 seconds.
-*   **Enable/Disable Script Cues (ListVideo Icon)**: Toggles whether the app will act on embedded cues like `[PLAY VIDEO #]` and `[PAUSE # SECONDS]`. When enabled, the app will automatically trigger countdowns. When disabled, these cues will be ignored.
+*   **Enable/Disable Script Cues (ListVideo Icon)**: Toggles whether the app will act on embedded cues like `[PLAY VIDEO #]` and `[PAUSE # SECONDS]`. When enabled, a green dot will appear as a heads-up before the cue, and the app will automatically trigger countdowns. When disabled, these cues will be ignored.
 *   **Command Logging (ClipboardList Icon)**: Toggles the command logging feature. When active, every voice command, pause, resume, or jump is captured with a timestamp and a "take" number. This is invaluable for reviewing a session or preparing a video for editing.
 *   **Download Log (Download Icon)**: This button becomes active once you have logged at least one command. Clicking it reveals a menu to download the session log as a `.CSV` file (for spreadsheets) or a `.SRT` file (a standard subtitle format perfect for video editing timelines).
 *   **Audio Input (AudioLines Icon)**: Click this icon to open a popover listing all available microphones connected to your computer. This allows you to easily switch between your system default, a USB mic, or other audio inputs without leaving the app.
@@ -67,7 +67,7 @@ The control panel features four vertical sliders for precise adjustments, as wel
     *   **Hover over the icon** above the slider to see the current value in a tooltip.
     *   **Click the icon** to open a popover where you can type a precise numeric value. Press 'Enter' or click outside the popover to save.
 *   **Controls**:
-    *   **Scroll Speed (Gauge Icon)**: Sets the manual scrolling speed, with a wide range from a slow crawl to a very fast pace. This slider is disabled when Voice Control is active.
+    *   **Scroll Speed (Gauge Icon)**: Sets the manual scrolling speed. The scale is mapped from 0 (25 pixels/sec) to 100 (250 pixels/sec) for a wide, responsive range. This slider is disabled when Voice Control is active.
     *   **Font Size (TextIcon)**: Increases or decreases the size of the prompter text.
     *   **Horizontal Margin (StretchHorizontal Icon)**: Adjusts the empty space on the left and right sides of the text.
     *   **Vertical Margin (StretchVertical Icon)**: Adjusts the vertical reading line. The default value places the text in the upper portion of the view, ideal for looking into a camera. The slider then allows you to fine-tune this position up or down.
@@ -162,4 +162,4 @@ The voice control feature is an advanced AI system that interprets user speech f
 #### 8. Smooth, Time-Based Scrolling Animation
 To ensure a fluid teleprompter experience, the scrolling is driven by a custom animation loop.
 *   **`requestAnimationFrame`**: This browser API synchronizes animations with the display's refresh rate, preventing stuttering.
-*   **Time-Based Calculation**: The scroll speed is calculated based on the actual time elapsed between frames (`deltaTime`). This ensures that the scrolling speed remains consistent regardless of device performance.
+*   **Time-Based Calculation**: The scroll speed is calculated based on the actual time elapsed between frames (`deltaTime`). This ensures that the scrolling speed remains consistent regardless of device performance. The amount to scroll is calculated as `pixelsPerSecond * (deltaTime / 1000)`. Padding is added to the bottom of the scroll container equal to the container's own height minus the vertical margin, ensuring the last line of text can scroll all the way to the top reading line.
