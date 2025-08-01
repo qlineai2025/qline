@@ -1770,7 +1770,7 @@ export default function Home() {
                       className="w-full"
                        style={{
                         paddingTop: `${verticalMargin}vh`,
-                        paddingBottom: '100vh',
+                        paddingBottom: `calc(100vh - ${verticalMargin}vh)`,
                       }}
                     >
                       <div
@@ -1823,7 +1823,7 @@ export default function Home() {
                           className="w-full"
                            style={{
                             paddingTop: `${verticalMargin}vh`,
-                            paddingBottom: '100vh',
+                            paddingBottom: `calc(100vh - ${verticalMargin}vh)`,
                           }}
                         >
                           <div
