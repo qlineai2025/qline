@@ -6,6 +6,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { controlTeleprompter } from "@/ai/flows/teleprompter-control-flow.ts";
 import { assistWithScript, ScriptAssistantCommand } from "@/ai/flows/script-assistant-flow.ts";
 import { cn } from "@/lib/utils";
+import { HexColorPicker } from "react-colorful";
 
 import { useAuth } from "@/components/auth-provider";
 import { auth, googleProvider } from "@/lib/firebase";
@@ -75,7 +76,6 @@ import {
   Sun,
   Moon,
   PanelLeft,
-  Palette,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -117,15 +117,9 @@ const DEFAULT_SETTINGS = {
   horizontalMargin: 20,
   verticalMargin: 40,
   startDelay: 3,
-  accentColor: "175 44% 65%",
+  accentColor: "#22d3ee",
 };
 
-const ACCENT_COLORS = [
-    { name: "Teal", value: "175 44% 65%" },
-    { name: "Blue", value: "217.2 91.2% 59.8%" },
-    { name: "Rose", value: "346.8 77.2% 49.8%" },
-    { name: "Orange", value: "24.6 95% 53.1%" },
-];
 
 interface SavedSetting {
   id: string;
@@ -142,6 +136,10 @@ interface CommandLogEntry {
   command: string;
   details: string;
 }
+
+const CurrentColorCircle = ({ color }: { color: string }) => (
+  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
+);
 
 
 export default function Home() {
@@ -255,7 +253,29 @@ export default function Home() {
   }, []);
   
   useEffect(() => {
-    document.documentElement.style.setProperty('--accent', accentColor);
+    function hexToHsl(hex: string): string {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        if (!result) return '0 0% 0%';
+        let r = parseInt(result[1], 16);
+        let g = parseInt(result[2], 16);
+        let b = parseInt(result[3], 16);
+        r /= 255; g /= 255; b /= 255;
+        const max = Math.max(r, g, b), min = Math.min(r, g, b);
+        let h = 0, s = 0, l = (max + min) / 2;
+        if (max !== min) {
+            const d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                case g: h = (b - r) / d + 2; break;
+                case b: h = (r - g) / d + 4; break;
+            }
+            h /= 6;
+        }
+        return `${(h * 360).toFixed(0)} ${(s * 100).toFixed(0)}% ${(l * 100).toFixed(0)}%`;
+    }
+
+    document.documentElement.style.setProperty('--accent', hexToHsl(accentColor));
   }, [accentColor]);
 
   const getAudioDevices = useCallback(async () => {
@@ -1529,32 +1549,14 @@ export default function Home() {
                             <TooltipTrigger asChild>
                               <PopoverTrigger asChild>
                                 <Button variant="ghost" size="icon" className="w-5 h-5">
-                                  <Palette className="h-3 w-3" />
+                                  <CurrentColorCircle color={accentColor} />
                                 </Button>
                               </PopoverTrigger>
                             </TooltipTrigger>
                             <TooltipContent><p>Accent Color</p></TooltipContent>
                           </Tooltip>
                           <PopoverContent className="w-auto p-2">
-                            <RadioGroup value={accentColor} onValueChange={setAccentColor} className="flex gap-2">
-                              {ACCENT_COLORS.map(color => (
-                                <Tooltip key={color.name}>
-                                  <TooltipTrigger asChild>
-                                    <RadioGroupItem value={color.value} id={`accent-${color.name}`} className="sr-only" />
-                                  </TooltipTrigger>
-                                  <Label htmlFor={`accent-${color.name}`}>
-                                    <div 
-                                      className="h-6 w-6 rounded-full border-2 border-transparent"
-                                      style={{ 
-                                        backgroundColor: `hsl(${color.value})`,
-                                        borderColor: accentColor === color.value ? `hsl(${color.value})` : 'transparent'
-                                      }}
-                                    />
-                                  </Label>
-                                  <TooltipContent><p>{color.name}</p></TooltipContent>
-                                </Tooltip>
-                              ))}
-                            </RadioGroup>
+                             <HexColorPicker color={accentColor} onChange={setAccentColor} />
                           </PopoverContent>
                         </Popover>
                         <Tooltip>
@@ -2011,7 +2013,7 @@ export default function Home() {
                         size="icon"
                         className={cn(
                           "opacity-60 hover:opacity-100",
-                          isPrompterHighContrast ? "text-white hover:text-white bg-transparent" : "text-black hover:text-black bg-transparent"
+                          isPrompterHighContrast ? "text-white bg-transparent hover:bg-white/10" : "text-black bg-transparent hover:bg-black/10"
                         )}
                       >
                         <PanelLeft className="h-4 w-4" />
@@ -2029,7 +2031,7 @@ export default function Home() {
                         size="icon"
                         className={cn(
                           "opacity-60 hover:opacity-100",
-                          isPrompterHighContrast ? "text-white hover:text-white bg-transparent" : "text-black hover:text-black bg-transparent"
+                          isPrompterHighContrast ? "text-white bg-transparent hover:bg-white/10" : "text-black bg-transparent hover:bg-black/10"
                         )}
                       >
                         <FileText className="h-4 w-4" />
@@ -2046,7 +2048,7 @@ export default function Home() {
                       size="icon"
                       className={cn(
                         "opacity-60 hover:opacity-100",
-                        isPrompterHighContrast ? "text-white hover:text-white bg-transparent" : "text-black hover:text-black bg-transparent"
+                        isPrompterHighContrast ? "text-white bg-transparent hover:bg-white/10" : "text-black bg-transparent hover:bg-black/10"
                       )}
                     >
                       <Rewind className="h-4 w-4" />
@@ -2063,7 +2065,7 @@ export default function Home() {
                               size="icon"
                               className={cn(
                                 "opacity-60 hover:opacity-100",
-                                isPrompterHighContrast ? "text-white hover:text-white bg-transparent" : "text-black hover:text-black bg-transparent"
+                                isPrompterHighContrast ? "text-white bg-transparent hover:bg-white/10" : "text-black bg-transparent hover:bg-black/10"
                               )}
                               onMouseDown={handleContrastMouseDown}
                               onMouseUp={handleContrastRelease}
@@ -2096,7 +2098,7 @@ export default function Home() {
                       size="icon"
                       className={cn(
                         "opacity-60 hover:opacity-100",
-                        isPrompterHighContrast ? "text-white hover:text-white bg-transparent" : "text-black hover:text-black bg-transparent"
+                        isPrompterHighContrast ? "text-white bg-transparent hover:bg-white/10" : "text-black bg-transparent hover:bg-black/10"
                       )}
                     >
                       <ArrowLeftRight className="h-4 w-4" />
@@ -2112,7 +2114,7 @@ export default function Home() {
                       size="icon"
                       className={cn(
                         "opacity-60 hover:opacity-100",
-                        isPrompterHighContrast ? "text-white hover:text-white bg-transparent" : "text-black hover:text-black bg-transparent"
+                        isPrompterHighContrast ? "text-white bg-transparent hover:bg-white/10" : "text-black bg-transparent hover:bg-black/10"
                       )}
                     >
                       <ArrowUpDown className="h-4 w-4" />
@@ -2128,7 +2130,7 @@ export default function Home() {
                       size="icon"
                       className={cn(
                         "opacity-60 hover:opacity-100",
-                        isPrompterHighContrast ? "text-white hover:text-white bg-transparent" : "text-black hover:text-black bg-transparent"
+                        isPrompterHighContrast ? "text-white bg-transparent hover:bg-white/10" : "text-black bg-transparent hover:bg-black/10"
                       )}
                     >
                     {isMaximized ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
