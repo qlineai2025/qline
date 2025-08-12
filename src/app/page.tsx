@@ -1835,7 +1835,7 @@ export default function Home() {
                     style={{
                       paddingLeft: `${horizontalMargin}%`,
                       paddingRight: `${horizontalMargin}%`,
-                      filter: isPrompterHighContrast ? 'none' : `brightness(${prompterBrightness}%)`
+                      filter: !isPrompterHighContrast ? `brightness(${prompterBrightness}%)` : 'none'
                     }}
                   >
                     <div
@@ -1872,7 +1872,7 @@ export default function Home() {
                               isFlippedVertically && "scale-y-[-1]"
                           )}
                           style={{
-                            filter: isPrompterHighContrast ? 'none' : `brightness(${prompterBrightness}%)`
+                            filter: !isPrompterHighContrast ? `brightness(${prompterBrightness}%)` : 'none'
                           }}
                       >
                           <img
@@ -1896,7 +1896,7 @@ export default function Home() {
                         style={{
                           paddingLeft: `${horizontalMargin}%`,
                           paddingRight: `${horizontalMargin}%`,
-                          filter: isPrompterHighContrast ? 'none' : `brightness(${prompterBrightness}%)`
+                          filter: !isPrompterHighContrast ? `brightness(${prompterBrightness}%)` : 'none'
                         }}
                       >
                         <div
@@ -1961,7 +1961,10 @@ export default function Home() {
                       onClick={handleRewind}
                       variant="ghost"
                       size="icon"
-                      className="opacity-60 text-white hover:text-white/80"
+                      className={cn(
+                        "opacity-60",
+                        isPrompterHighContrast ? "text-white hover:text-white/80" : "text-black hover:text-black/80"
+                      )}
                     >
                       <Rewind className="h-4 w-4" />
                     </Button>
@@ -1975,7 +1978,10 @@ export default function Home() {
                            <Button
                               variant="ghost"
                               size="icon"
-                              className="opacity-60 text-white hover:text-white/80"
+                              className={cn(
+                                "opacity-60",
+                                isPrompterHighContrast ? "text-white hover:text-white/80" : "text-black hover:text-black/80"
+                              )}
                               onMouseDown={handleContrastLongPress}
                               onMouseUp={handleContrastRelease}
                               onTouchStart={handleContrastLongPress}
@@ -2005,7 +2011,10 @@ export default function Home() {
                       onClick={() => setIsFlippedHorizontally(!isFlippedHorizontally)}
                       variant="ghost"
                       size="icon"
-                      className="opacity-60 text-white hover:text-white/80"
+                      className={cn(
+                        "opacity-60",
+                        isPrompterHighContrast ? "text-white hover:text-white/80" : "text-black hover:text-black/80"
+                      )}
                     >
                       <ArrowLeftRight className="h-4 w-4" />
                     </Button>
@@ -2018,7 +2027,10 @@ export default function Home() {
                       onClick={() => setIsFlippedVertically(!isFlippedVertically)}
                       variant="ghost"
                       size="icon"
-                      className="opacity-60 text-white hover:text-white/80"
+                      className={cn(
+                        "opacity-60",
+                        isPrompterHighContrast ? "text-white hover:text-white/80" : "text-black hover:text-black/80"
+                      )}
                     >
                       <ArrowUpDown className="h-4 w-4" />
                     </Button>
@@ -2031,7 +2043,10 @@ export default function Home() {
                       onClick={() => setIsMaximized(!isMaximized)}
                       variant="ghost"
                       size="icon"
-                      className="opacity-60 text-white hover:text-white/80"
+                      className={cn(
+                        "opacity-60",
+                        isPrompterHighContrast ? "text-white hover:text-white/80" : "text-black hover:text-black/80"
+                      )}
                     >
                     {isMaximized ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
                     </Button>
@@ -2174,4 +2189,3 @@ export default function Home() {
     </main>
   );
 }
-
