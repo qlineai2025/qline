@@ -1835,6 +1835,7 @@ export default function Home() {
                     style={{
                       paddingLeft: `${horizontalMargin}%`,
                       paddingRight: `${horizontalMargin}%`,
+                      filter: isPrompterHighContrast ? 'none' : `brightness(${prompterBrightness}%)`
                     }}
                   >
                     <div
@@ -1852,7 +1853,7 @@ export default function Home() {
                         style={{
                           fontSize: `${fontSize}px`,
                           lineHeight: 1.5,
-                          filter: `brightness(${prompterBrightness}%)`
+                          filter: isPrompterHighContrast ? `brightness(${prompterBrightness}%)` : 'none'
                         }}
                       >
                         {processedText()}
@@ -1870,13 +1871,16 @@ export default function Home() {
                               isFlippedHorizontally && "scale-x-[-1]",
                               isFlippedVertically && "scale-y-[-1]"
                           )}
+                          style={{
+                            filter: isPrompterHighContrast ? 'none' : `brightness(${prompterBrightness}%)`
+                          }}
                       >
                           <img
                               src={slides[currentSlideIndex]?.imageUrl}
                               alt={`Slide ${currentSlideIndex + 1}`}
                               className="max-w-full max-h-full object-contain"
                               style={{
-                                filter: `brightness(${prompterBrightness}%)`
+                                filter: isPrompterHighContrast ? `brightness(${prompterBrightness}%)` : 'none'
                               }}
                           />
                       </div>
@@ -1892,6 +1896,7 @@ export default function Home() {
                         style={{
                           paddingLeft: `${horizontalMargin}%`,
                           paddingRight: `${horizontalMargin}%`,
+                          filter: isPrompterHighContrast ? 'none' : `brightness(${prompterBrightness}%)`
                         }}
                       >
                         <div
@@ -1909,7 +1914,7 @@ export default function Home() {
                             style={{
                               fontSize: `${fontSize}px`,
                               lineHeight: 1.5,
-                              filter: `brightness(${prompterBrightness}%)`
+                              filter: isPrompterHighContrast ? `brightness(${prompterBrightness}%)` : 'none'
                             }}
                           >
                             {processedText()}
@@ -1956,10 +1961,7 @@ export default function Home() {
                       onClick={handleRewind}
                       variant="ghost"
                       size="icon"
-                      className={cn(
-                        "opacity-60",
-                        isPrompterHighContrast ? "text-white hover:text-white/80" : "text-black hover:text-black/80"
-                      )}
+                      className="opacity-60 text-white hover:text-white/80"
                     >
                       <Rewind className="h-4 w-4" />
                     </Button>
@@ -1973,10 +1975,7 @@ export default function Home() {
                            <Button
                               variant="ghost"
                               size="icon"
-                              className={cn(
-                                  "opacity-60",
-                                  isPrompterHighContrast ? "text-white hover:text-white/80" : "text-black hover:text-black/80"
-                              )}
+                              className="opacity-60 text-white hover:text-white/80"
                               onMouseDown={handleContrastLongPress}
                               onMouseUp={handleContrastRelease}
                               onTouchStart={handleContrastLongPress}
@@ -2006,10 +2005,7 @@ export default function Home() {
                       onClick={() => setIsFlippedHorizontally(!isFlippedHorizontally)}
                       variant="ghost"
                       size="icon"
-                      className={cn(
-                        "opacity-60",
-                        isPrompterHighContrast ? "text-white hover:text-white/80" : "text-black hover:text-black/80"
-                      )}
+                      className="opacity-60 text-white hover:text-white/80"
                     >
                       <ArrowLeftRight className="h-4 w-4" />
                     </Button>
@@ -2022,10 +2018,7 @@ export default function Home() {
                       onClick={() => setIsFlippedVertically(!isFlippedVertically)}
                       variant="ghost"
                       size="icon"
-                      className={cn(
-                        "opacity-60",
-                        isPrompterHighContrast ? "text-white hover:text-white/80" : "text-black hover:text-black/80"
-                      )}
+                      className="opacity-60 text-white hover:text-white/80"
                     >
                       <ArrowUpDown className="h-4 w-4" />
                     </Button>
@@ -2038,10 +2031,7 @@ export default function Home() {
                       onClick={() => setIsMaximized(!isMaximized)}
                       variant="ghost"
                       size="icon"
-                      className={cn(
-                        "opacity-60",
-                        isPrompterHighContrast ? "text-white hover:text-white/80" : "text-black hover:text-black/80"
-                      )}
+                      className="opacity-60 text-white hover:text-white/80"
                     >
                     {isMaximized ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
                     </Button>
