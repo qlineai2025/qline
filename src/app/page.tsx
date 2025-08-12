@@ -147,7 +147,7 @@ export default function Home() {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [isVoiceControlOn, setIsVoiceControlOn] = useState<boolean>(true);
   const [isProcessingAudio, setIsProcessingAudio] = useState<boolean>(false);
-  const [isHighContrast, setIsHighContrast] = useState<boolean>(true);
+  const [isPrompterHighContrast, setIsPrompterHighContrast] = useState<boolean>(true);
   const [isMaximized, setIsMaximized] = useState<boolean>(false);
   const [isFlippedHorizontally, setIsFlippedHorizontally] = useState<boolean>(false);
   const [isFlippedVertically, setIsFlippedVertically] = useState<boolean>(false);
@@ -158,6 +158,7 @@ export default function Home() {
   const [countdown, setCountdown] = useState<number | null>(null);
   const [areCuesEnabled, setAreCuesEnabled] = useState<boolean>(true);
   const [isIndicatorVisible, setIsIndicatorVisible] = useState<boolean>(false);
+  const [isAppInDarkMode, setIsAppInDarkMode] = useState<boolean>(false);
   
   const [prompterMode, setPrompterMode] = useState<'text' | 'slides'>('text');
   const [slideDisplayMode, setSlideDisplayMode] = useState<'slide' | 'notes'>('slide');
@@ -234,7 +235,7 @@ export default function Home() {
     // Set initial theme based on system preference
     const isSystemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     document.documentElement.classList.toggle('dark', isSystemDark);
-    setIsHighContrast(isSystemDark);
+    setIsAppInDarkMode(isSystemDark);
   }, []);
 
   const getAudioDevices = useCallback(async () => {
@@ -334,7 +335,7 @@ export default function Home() {
       fontSize,
       horizontalMargin,
       verticalMargin,
-      isHighContrast,
+      isPrompterHighContrast,
       isFlippedHorizontally,
       isFlippedVertically,
       scrollSpeed,
@@ -349,7 +350,7 @@ export default function Home() {
     } catch (e) {
         console.error("Could not write to localStorage", e);
     }
-  }, [text, fontSize, horizontalMargin, verticalMargin, isHighContrast, isFlippedHorizontally, isFlippedVertically, scrollSpeed, prompterMode, slides, currentSlideIndex, slideDisplayMode]);
+  }, [text, fontSize, horizontalMargin, verticalMargin, isPrompterHighContrast, isFlippedHorizontally, isFlippedVertically, scrollSpeed, prompterMode, slides, currentSlideIndex, slideDisplayMode]);
 
   const handleSave = (setter: React.Dispatch<React.SetStateAction<number>>, value: string, min: number, max: number, popoverSetter: React.Dispatch<React.SetStateAction<boolean>>) => {
     const numValue = parseInt(value, 10);
@@ -1292,7 +1293,7 @@ export default function Home() {
 
   const handleToggleTheme = () => {
     const isDark = document.documentElement.classList.toggle('dark');
-    setIsHighContrast(isDark);
+    setIsAppInDarkMode(isDark);
   };
 
   return (
@@ -1482,7 +1483,7 @@ export default function Home() {
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button variant="ghost" size="icon" className="w-5 h-5" onClick={handleToggleTheme}>
-                                {isHighContrast ? <Sun className="h-3 w-3" /> : <Moon className="h-3 w-3" />}
+                                {isAppInDarkMode ? <Sun className="h-3 w-3" /> : <Moon className="h-3 w-3" />}
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent><p>Toggle Theme</p></TooltipContent>
@@ -1801,7 +1802,7 @@ export default function Home() {
                     ref={displayRef}
                     className={cn(
                       "h-full overflow-y-auto",
-                      isHighContrast && "bg-black",
+                      isPrompterHighContrast ? "bg-black" : "bg-white",
                       isFlippedHorizontally && "scale-x-[-1]",
                       isFlippedVertically && "scale-y-[-1]"
                     )}
@@ -1820,7 +1821,7 @@ export default function Home() {
                       <div
                         className={cn(
                           "whitespace-pre-wrap break-words m-auto",
-                          isHighContrast ? "text-white" : "text-foreground"
+                          isPrompterHighContrast ? "text-white" : "text-black"
                         )}
                         style={{
                           fontSize: `${fontSize}px`,
@@ -1838,7 +1839,7 @@ export default function Home() {
                        <div
                           className={cn(
                               "h-full w-full flex items-center justify-center",
-                              isHighContrast && "bg-black",
+                              isPrompterHighContrast ? "bg-black" : "bg-white",
                               isFlippedHorizontally && "scale-x-[-1]",
                               isFlippedVertically && "scale-y-[-1]"
                           )}
@@ -1854,7 +1855,7 @@ export default function Home() {
                         ref={displayRef}
                         className={cn(
                           "h-full overflow-y-auto",
-                          isHighContrast && "bg-black",
+                          isPrompterHighContrast ? "bg-black" : "bg-white",
                           isFlippedHorizontally && "scale-x-[-1]",
                           isFlippedVertically && "scale-y-[-1]"
                         )}
@@ -1873,7 +1874,7 @@ export default function Home() {
                           <div
                             className={cn(
                               "whitespace-pre-wrap break-words m-auto",
-                              isHighContrast ? "text-white" : "text-foreground"
+                              isPrompterHighContrast ? "text-white" : "text-black"
                             )}
                             style={{
                               fontSize: `${fontSize}px`,
@@ -1926,13 +1927,29 @@ export default function Home() {
                       size="icon"
                       className={cn(
                         "opacity-60",
-                        isHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : ""
+                        isPrompterHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : "bg-white text-black hover:bg-white/80 hover:text-black"
                       )}
                     >
                       <Rewind className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="left"><p>Rewind to Top</p></TooltipContent>
+                </Tooltip>
+                 <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => setIsPrompterHighContrast(!isPrompterHighContrast)}
+                      variant="ghost"
+                      size="icon"
+                      className={cn(
+                        "opacity-60",
+                        isPrompterHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : "bg-white text-black hover:bg-white/80 hover:text-black"
+                      )}
+                    >
+                      <Contrast className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left"><p>Toggle Contrast</p></TooltipContent>
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -1942,7 +1959,7 @@ export default function Home() {
                       size="icon"
                       className={cn(
                         "opacity-60",
-                        isHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : ""
+                        isPrompterHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : "bg-white text-black hover:bg-white/80 hover:text-black"
                       )}
                     >
                       <ArrowLeftRight className="h-4 w-4" />
@@ -1958,7 +1975,7 @@ export default function Home() {
                       size="icon"
                       className={cn(
                         "opacity-60",
-                        isHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : ""
+                        isPrompterHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : "bg-white text-black hover:bg-white/80 hover:text-black"
                       )}
                     >
                       <ArrowUpDown className="h-4 w-4" />
@@ -1974,7 +1991,7 @@ export default function Home() {
                       size="icon"
                       className={cn(
                         "opacity-60",
-                        isHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : ""
+                        isPrompterHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : "bg-white text-black hover:bg-white/80 hover:text-black"
                       )}
                     >
                     {isMaximized ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
@@ -2103,3 +2120,4 @@ export default function Home() {
     </main>
   );
 }
+

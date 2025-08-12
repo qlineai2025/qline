@@ -10,7 +10,7 @@ interface PresenterSettings {
   fontSize: number;
   horizontalMargin: number;
   verticalMargin: number;
-  isHighContrast: boolean;
+  isPrompterHighContrast: boolean;
   isFlippedHorizontally: boolean;
   isFlippedVertically: boolean;
   scrollSpeed: number;
@@ -25,7 +25,7 @@ const DEFAULT_SETTINGS: PresenterSettings = {
   fontSize: 40,
   horizontalMargin: 20,
   verticalMargin: 40,
-  isHighContrast: true,
+  isPrompterHighContrast: true,
   isFlippedHorizontally: false,
   isFlippedVertically: false,
   scrollSpeed: 10,
@@ -184,7 +184,7 @@ export default function PresenterPage() {
       ref={displayRef}
       className={cn(
         "h-full overflow-y-auto",
-        settings.isHighContrast && "bg-black",
+        settings.isPrompterHighContrast ? "bg-black" : "bg-white",
         settings.isFlippedHorizontally && "scale-x-[-1]",
         settings.isFlippedVertically && "scale-y-[-1]"
       )}
@@ -203,7 +203,7 @@ export default function PresenterPage() {
         <div
           className={cn(
             "whitespace-pre-wrap break-words m-auto",
-            settings.isHighContrast ? "text-white" : "text-foreground"
+            settings.isPrompterHighContrast ? "text-white" : "text-black"
           )}
           style={{
             fontSize: `${settings.fontSize}px`,
@@ -222,7 +222,7 @@ export default function PresenterPage() {
        <div
         className={cn(
           "h-full w-full flex items-center justify-center",
-          settings.isHighContrast && "bg-black",
+          settings.isPrompterHighContrast ? "bg-black" : "bg-white",
           settings.isFlippedHorizontally && "scale-x-[-1]",
           settings.isFlippedVertically && "scale-y-[-1]"
         )}
@@ -245,3 +245,4 @@ export default function PresenterPage() {
     </main>
   );
 }
+
