@@ -1,14 +1,14 @@
-# CuePilot AI: Presentation Script
+# Q_: Presentation Script
 
 ---
 
 ## Slide 1: Title Slide
 
-**Image:** App Logo (CuePilot AI)
-**Title:** CuePilot AI: Your Intelligent Presentation Co-Pilot
+**Image:** App Logo (Q_)
+**Title:** Q_: Your Intelligent Presentation Co-Pilot
 **Subtitle:** Effortless Control, Flawless Delivery.
 
-**(Presenter):** Hello everyone, and thank you for joining. Today, we're going to talk about a common challenge for anyone who speaks in public: staying on script, managing slides, and engaging an audience, all at the same time. We've created a tool that doesn't just help you read a script, but acts as an intelligent co-pilot for your entire presentation. This is CuePilot AI.
+**(Presenter):** Hello everyone, and thank you for joining. Today, we're going to talk about a common challenge for anyone who speaks in public: staying on script, managing slides, and engaging an audience, all at the same time. We've created a tool that doesn't just help you read a script, but acts as an intelligent co-pilot for your entire presentation. This is Q_.
 
 ---
 
@@ -25,13 +25,13 @@
 
 ---
 
-## Slide 3: Our Solution: CuePilot AI
+## Slide 3: Our Solution: Q_
 
-**Image:** A clean screenshot of the CuePilot AI main interface.
+**Image:** A clean screenshot of the Q_ main interface.
 **Title:** An Intelligent Co-Pilot for Your Voice
-**Key Message:** CuePilot AI listens, understands, and adapts to you.
+**Key Message:** Q_ listens, understands, and adapts to you.
 
-**(Presenter):** CuePilot AI is different. We designed it from the ground up to be an intelligent partner. It uses AI to listen to your voice, understand your commands, and adapt to your natural speaking rhythm. It's not just a scroller; it's a co-pilot that puts you in effortless control.
+**(Presenter):** Q_ is different. We designed it from the ground up to be an intelligent partner. It uses AI to listen to your voice, understand your commands, and adapt to your natural speaking rhythm. It's not just a scroller; it's a co-pilot that puts you in effortless control.
 
 ---
 
@@ -59,7 +59,7 @@
 2.  **Pace Matching:** If no command is heard, it matches the scroll speed to your voice.
 3.  **Positional Awareness:** It knows where you are in the script.
 
-**(Presenter):** But the real magic is how CuePilot AI listens. This is our "Enhanced Voice Control."
+**(Presenter):** But the real magic is how Q_ listens. This is our "Enhanced Voice Control."
 
 You can talk *to* the app. Say **"next slide,"** and it advances your presentation. Say **"pause,"** and it stops. You can even say **"go back to the part about data security,"** and the AI will find that phrase in your script and jump right to it. It understands commands for navigation, playback, and even in-text searching.
 
@@ -78,7 +78,7 @@ And when you're *not* giving a command? It seamlessly falls back to its other jo
 
 **(Presenter):** We've built the ultimate workflow for slide-based presentations. When you import a Google Slides deck, you get both your visuals and your script. You can choose what to see in the prompter: the slide itself, for a visual cue, or your speaker notes as a scrollable, voice-controlled script.
 
-Best of all, when you're reading your notes, CuePilot AI knows when you've reached the end. It will automatically advance to the next slide and its notes, creating a completely hands-free and professional presentation experience.
+Best of all, when you're reading your notes, Q_ knows when you've reached the end. It will automatically advance to the next slide and its notes, creating a completely hands-free and professional presentation experience.
 
 ---
 
@@ -114,11 +114,13 @@ We use Google's own secure sign-in system, so we never see your password. When y
 
 ## Slide 9: Conclusion & Thank You
 
-**Image:** The CuePilot AI logo again.
-**Title:** CuePilot AI: Present with Confidence
+**Image:** The Q_ logo again.
+**Title:** Q_: Present with Confidence
 **Call to Action:** Try it now.
 **Contact Info:** Your website/contact info.
 
-**(Presenter):** With CuePilot AI, you can stop juggling and start connecting. It's a tool that adapts to you, giving you the confidence to deliver flawless presentations every time.
+**(Presenter):** With Q_, you can stop juggling and start connecting. It's a tool that adapts to you, giving you the confidence to deliver flawless presentations every time.
 
 Thank you. I'm now happy to answer any questions you may have.
+
+    

@@ -1,10 +1,10 @@
-# CuePilot AI: User Manual & Design Guide
+# Q_: User Manual & Design Guide
 
-This document provides a complete guide to the features, design patterns, and functionality of the CuePilot AI application.
+This document provides a complete guide to the features, design patterns, and functionality of the Q_ application.
 
 ## 1. User Manual: How to Use the App
 
-This guide will walk you through all the features of CuePilot AI.
+This guide will walk you through all the features of Q_.
 
 ### Getting Started
 
@@ -94,7 +94,7 @@ The script editor is located at the bottom of the page and includes several powe
 
 ### Production & Logging
 
-CuePilot AI includes features designed for a professional production workflow, particularly for video recording and editing.
+Q_ includes features designed for a professional production workflow, particularly for video recording and editing.
 
 *   **Understanding "Takes"**: The app automatically tracks your performance in "takes." A new take is started whenever you resume from a pause, use the rewind function, or jump to a different part of the script with your voice. This creates a granular record of every continuous performance segment.
 *   **Log Files for Editing**: By enabling **Command Logging**, you can export this performance data as a `.SRT` file. When imported into video editing software like Adobe Premiere Pro, this file will place markers on your timeline for every take, pause, and command, dramatically speeding up the editing process.
@@ -163,3 +163,5 @@ The voice control feature is an advanced AI system that interprets user speech f
 To ensure a fluid teleprompter experience, the scrolling is driven by a custom animation loop.
 *   **`requestAnimationFrame`**: This browser API synchronizes animations with the display's refresh rate, preventing stuttering.
 *   **Time-Based Calculation**: The scroll speed is calculated based on the actual time elapsed between frames (`deltaTime`). This ensures that the scrolling speed remains consistent regardless of device performance. The amount to scroll is calculated as `pixelsPerSecond * (deltaTime / 1000)`. Padding is added to the bottom of the scroll container equal to the container's own height minus the vertical margin, ensuring the last line of text can scroll all the way to the top reading line.
+
+    

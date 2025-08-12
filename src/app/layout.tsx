@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from '@/components/auth-provider';
 
 export const metadata: Metadata = {
-  title: 'CuePilot AI',
+  title: 'Q_',
   description: 'Your intelligent presentation and teleprompter co-pilot, powered by AI.',
 };
 
@@ -29,3 +29,5 @@ export default function RootLayout({
     </html>
   );
 }
+
+    

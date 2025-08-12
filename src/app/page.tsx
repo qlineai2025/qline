@@ -81,7 +81,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 
 
-const DEFAULT_TEXT = `Welcome to CuePilot AI, your intelligent teleprompter.
+const DEFAULT_TEXT = `Welcome to Q_, your intelligent teleprompter.
 
 This is your script editor. Paste your text here to begin.
 
@@ -1270,7 +1270,7 @@ export default function Home() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `cuepilot_log_${new Date().toISOString()}.${fileExtension}`;
+    a.download = `q_log_${new Date().toISOString()}.${fileExtension}`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -2058,3 +2058,5 @@ export default function Home() {
     </main>
   );
 }
+
+    
