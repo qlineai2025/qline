@@ -72,6 +72,8 @@ import {
   ListVideo,
   FileText,
   X,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -227,6 +229,13 @@ export default function Home() {
   useEffect(() => { setHorizontalMarginInput(String(horizontalMargin)) }, [horizontalMargin]);
   useEffect(() => { setVerticalMarginInput(String(verticalMargin)) }, [verticalMargin]);
   useEffect(() => { setDelayInput(String(startDelay)) }, [startDelay]);
+
+  useEffect(() => {
+    // Set initial theme based on system preference
+    const isSystemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.classList.toggle('dark', isSystemDark);
+    setIsHighContrast(isSystemDark);
+  }, []);
 
   const getAudioDevices = useCallback(async () => {
     if (!navigator.mediaDevices?.enumerateDevices) {
@@ -1329,25 +1338,12 @@ export default function Home() {
                               size="icon" 
                               onClick={() => setIsVoiceControlOn(!isVoiceControlOn)} 
                               disabled={voiceControlDisabled}
-                              className="rounded-none border-l-0"
+                              className="rounded-l-none"
                             >
                                 <Mic className={cn(isVoiceControlOn ? "text-accent" : "text-primary-foreground")} />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent><p>Voice Control</p></TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              size="icon" 
-                              onClick={handleToggleTheme}
-                              className="rounded-l-none"
-                            >
-                                <Contrast />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent><p>Toggle Dark/Light Mode</p></TooltipContent>
                         </Tooltip>
                       </div>
                     </div>
@@ -1483,6 +1479,14 @@ export default function Home() {
                      
                     <div className="flex flex-col w-full items-center gap-2 pt-2 border-t flex-1">
                       <div className="flex items-center justify-center gap-2 w-full text-sm font-medium text-muted-foreground">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="w-5 h-5" onClick={handleToggleTheme}>
+                                {isHighContrast ? <Sun className="h-3 w-3" /> : <Moon className="h-3 w-3" />}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent><p>Toggle Theme</p></TooltipContent>
+                        </Tooltip>
                         <Popover open={isLoadPopoverOpen} onOpenChange={setIsLoadPopoverOpen}>
                           <PopoverTrigger asChild>
                             <Button variant="link" className="p-0 h-auto text-muted-foreground hover:no-underline hover:text-accent-foreground focus-visible:ring-0">
@@ -1929,22 +1933,6 @@ export default function Home() {
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="left"><p>Rewind to Top</p></TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={() => setIsHighContrast(!isHighContrast)}
-                      variant="ghost"
-                      size="icon"
-                      className={cn(
-                        "opacity-60",
-                        isHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : ""
-                      )}
-                    >
-                      <Contrast className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="left"><p>High Contrast</p></TooltipContent>
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
