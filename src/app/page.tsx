@@ -1281,6 +1281,11 @@ export default function Home() {
     URL.revokeObjectURL(url);
   };
 
+  const handleToggleTheme = () => {
+    const isDark = document.documentElement.classList.toggle('dark');
+    setIsHighContrast(isDark);
+  };
+
   return (
     <main className="flex h-screen flex-col bg-background" onClickCapture={() => { if (contextMenu) setContextMenu(null)}}>
       <div className="grid flex-1 grid-cols-[auto_1fr] gap-4 p-4 min-h-0">
@@ -1320,16 +1325,29 @@ export default function Home() {
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button 
-                              variant={isVoiceControlOn ? "default" : "outline"} 
+                              variant="default"
                               size="icon" 
                               onClick={() => setIsVoiceControlOn(!isVoiceControlOn)} 
                               disabled={voiceControlDisabled}
-                              className="rounded-l-none border-l-0"
+                              className="rounded-none border-l-0"
                             >
-                                <Mic />
+                                <Mic className={cn(isVoiceControlOn ? "text-accent" : "text-primary-foreground")} />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent><p>Voice Control</p></TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              size="icon" 
+                              onClick={handleToggleTheme}
+                              className="rounded-l-none"
+                            >
+                                <Contrast />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent><p>Toggle Dark/Light Mode</p></TooltipContent>
                         </Tooltip>
                       </div>
                     </div>
@@ -2097,5 +2115,3 @@ export default function Home() {
     </main>
   );
 }
-
-
