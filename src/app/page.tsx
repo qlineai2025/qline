@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
@@ -81,7 +82,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 
 
-const DEFAULT_TEXT = `Welcome to Q_, your intelligent teleprompter.
+const DEFAULT_TEXT = `Welcome to Cue Line, your intelligent teleprompter.
 
 This is your script editor. Paste your text here to begin.
 
@@ -1308,21 +1309,32 @@ export default function Home() {
                         </Button>
                       )}
                       
-                      <Button onClick={handlePlayPause} className="w-full" disabled={playPauseDisabled}>
-                        {isPlaying || countdown !== null ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
-                        {isPlaying || countdown !== null ? "Pause" : "Play"}
-                      </Button>
+                      <div className="flex w-full">
+                        <Button onClick={handlePlayPause} className="w-full rounded-r-none" disabled={playPauseDisabled}>
+                          {isPlaying || countdown !== null ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
+                          {isPlaying || countdown !== null ? "Pause" : "Play"}
+                        </Button>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              size="icon" 
+                              onClick={() => setIsVoiceControlOn(!isVoiceControlOn)} 
+                              disabled={voiceControlDisabled}
+                              className={cn(
+                                "rounded-l-none border-l-0",
+                                isVoiceControlOn && "bg-accent text-accent-foreground border-accent"
+                              )}
+                            >
+                                <Mic />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent><p>Voice Control</p></TooltipContent>
+                        </Tooltip>
+                      </div>
                     </div>
 
                     <div className="flex items-center justify-center pt-2 border-t w-full">
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" onClick={() => setIsVoiceControlOn(!isVoiceControlOn)} disabled={voiceControlDisabled}>
-                                    <Mic className={cn(isVoiceControlOn && "text-accent")} />
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent><p>Voice Control</p></TooltipContent>
-                        </Tooltip>
                          <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button variant="ghost" size="icon" onClick={handlePresent} className={cn(isPresenterModeActive && "text-accent")}>
@@ -1709,7 +1721,7 @@ export default function Home() {
                  </TooltipProvider>
               </CardContent>
             </Card>
-          </div>
+        </div>
 
         <div
           className={cn(
@@ -2059,4 +2071,3 @@ export default function Home() {
   );
 }
 
-    
