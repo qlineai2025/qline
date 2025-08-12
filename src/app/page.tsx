@@ -75,6 +75,7 @@ import {
   Sun,
   Moon,
   PanelLeft,
+  Palette,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -87,7 +88,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 
 
-const DEFAULT_TEXT = `Welcome to Cue Line, your intelligent teleprompter.
+const DEFAULT_TEXT = `Welcome to Q_, your intelligent teleprompter.
 
 This is your script editor. Paste your text here to begin.
 
@@ -116,7 +117,15 @@ const DEFAULT_SETTINGS = {
   horizontalMargin: 20,
   verticalMargin: 40,
   startDelay: 3,
+  accentColor: "175 44% 65%",
 };
+
+const ACCENT_COLORS = [
+    { name: "Teal", value: "175 44% 65%" },
+    { name: "Blue", value: "217.2 91.2% 59.8%" },
+    { name: "Rose", value: "346.8 77.2% 49.8%" },
+    { name: "Orange", value: "24.6 95% 53.1%" },
+];
 
 interface SavedSetting {
   id: string;
@@ -210,6 +219,7 @@ export default function Home() {
   const [triggeredCues, setTriggeredCues] = useState<number[]>([]);
   const [upcomingCue, setUpcomingCue] = useState<number | null>(null);
   const [isBrightnessPopoverOpen, setIsBrightnessPopoverOpen] = useState(false);
+  const [accentColor, setAccentColor] = useState<string>(DEFAULT_SETTINGS.accentColor);
 
 
   const displayRef = useRef<HTMLDivElement>(null);
@@ -243,6 +253,10 @@ export default function Home() {
     document.documentElement.classList.toggle('dark', isSystemDark);
     setIsAppInDarkMode(isSystemDark);
   }, []);
+  
+  useEffect(() => {
+    document.documentElement.style.setProperty('--accent', accentColor);
+  }, [accentColor]);
 
   const getAudioDevices = useCallback(async () => {
     if (!navigator.mediaDevices?.enumerateDevices) {
@@ -1095,6 +1109,7 @@ export default function Home() {
     setVerticalMargin(DEFAULT_SETTINGS.verticalMargin);
     setStartDelay(DEFAULT_SETTINGS.startDelay);
     setLoadedSettingName(null);
+    setAccentColor(DEFAULT_SETTINGS.accentColor);
     toast({ title: "Settings Reset", description: "All settings have been reset to their default values." });
   };
 
@@ -1312,9 +1327,9 @@ export default function Home() {
     }, 500);
   };
 
-  const handleContrastMouseUp = () => {
+  const handleContrastRelease = () => {
     if (longPressTimerRef.current) {
-        clearTimeout(longPressTimerRef.current);
+      clearTimeout(longPressTimerRef.current);
     }
   };
 
@@ -1509,6 +1524,39 @@ export default function Home() {
                      
                     <div className="flex flex-col w-full items-center gap-2 pt-2 border-t flex-1">
                       <div className="flex items-center justify-center gap-2 w-full text-sm font-medium text-muted-foreground">
+                        <Popover>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <PopoverTrigger asChild>
+                                <Button variant="ghost" size="icon" className="w-5 h-5">
+                                  <Palette className="h-3 w-3" />
+                                </Button>
+                              </PopoverTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Accent Color</p></TooltipContent>
+                          </Tooltip>
+                          <PopoverContent className="w-auto p-2">
+                            <RadioGroup value={accentColor} onValueChange={setAccentColor} className="flex gap-2">
+                              {ACCENT_COLORS.map(color => (
+                                <Tooltip key={color.name}>
+                                  <TooltipTrigger asChild>
+                                    <RadioGroupItem value={color.value} id={`accent-${color.name}`} className="sr-only" />
+                                  </TooltipTrigger>
+                                  <Label htmlFor={`accent-${color.name}`}>
+                                    <div 
+                                      className="h-6 w-6 rounded-full border-2 border-transparent"
+                                      style={{ 
+                                        backgroundColor: `hsl(${color.value})`,
+                                        borderColor: accentColor === color.value ? `hsl(${color.value})` : 'transparent'
+                                      }}
+                                    />
+                                  </Label>
+                                  <TooltipContent><p>{color.name}</p></TooltipContent>
+                                </Tooltip>
+                              ))}
+                            </RadioGroup>
+                          </PopoverContent>
+                        </Popover>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button variant="ghost" size="icon" className="w-5 h-5" onClick={handleToggleTheme}>
@@ -1831,9 +1879,7 @@ export default function Home() {
                     ref={displayRef}
                     className={cn(
                       "h-full overflow-y-auto",
-                      isPrompterHighContrast ? "bg-black" : "bg-white",
-                      isFlippedHorizontally && "scale-x-[-1]",
-                      isFlippedVertically && "scale-y-[-1]"
+                      isPrompterHighContrast ? "bg-black" : "bg-white"
                     )}
                     style={{
                       paddingLeft: `${horizontalMargin}%`,
@@ -1870,11 +1916,11 @@ export default function Home() {
                        <div
                           className={cn(
                               "h-full w-full flex items-center justify-center",
-                              isPrompterHighContrast ? "bg-black" : "bg-white",
-                              isFlippedHorizontally && "scale-x-[-1]",
-                              isFlippedVertically && "scale-y-[-1]"
+                              isPrompterHighContrast ? "bg-black" : "bg-white"
                           )}
                           style={{
+                            paddingLeft: `${horizontalMargin}%`,
+                            paddingRight: `${horizontalMargin}%`,
                             filter: !isPrompterHighContrast ? `brightness(${prompterBrightness}%)` : 'none'
                           }}
                       >
@@ -1892,9 +1938,7 @@ export default function Home() {
                         ref={displayRef}
                         className={cn(
                           "h-full overflow-y-auto",
-                          isPrompterHighContrast ? "bg-black" : "bg-white",
-                          isFlippedHorizontally && "scale-x-[-1]",
-                          isFlippedVertically && "scale-y-[-1]"
+                          isPrompterHighContrast ? "bg-black" : "bg-white"
                         )}
                         style={{
                           paddingLeft: `${horizontalMargin}%`,
@@ -1966,7 +2010,7 @@ export default function Home() {
                         variant="ghost"
                         size="icon"
                         className={cn(
-                          "opacity-60",
+                          "opacity-60 hover:opacity-100",
                           isPrompterHighContrast ? "text-white hover:text-white bg-transparent" : "text-black hover:text-black bg-transparent"
                         )}
                       >
@@ -1984,7 +2028,7 @@ export default function Home() {
                         variant="ghost"
                         size="icon"
                         className={cn(
-                          "opacity-60",
+                          "opacity-60 hover:opacity-100",
                           isPrompterHighContrast ? "text-white hover:text-white bg-transparent" : "text-black hover:text-black bg-transparent"
                         )}
                       >
@@ -2001,7 +2045,7 @@ export default function Home() {
                       variant="ghost"
                       size="icon"
                       className={cn(
-                        "opacity-60",
+                        "opacity-60 hover:opacity-100",
                         isPrompterHighContrast ? "text-white hover:text-white bg-transparent" : "text-black hover:text-black bg-transparent"
                       )}
                     >
@@ -2018,13 +2062,13 @@ export default function Home() {
                               variant="ghost"
                               size="icon"
                               className={cn(
-                                "opacity-60",
+                                "opacity-60 hover:opacity-100",
                                 isPrompterHighContrast ? "text-white hover:text-white bg-transparent" : "text-black hover:text-black bg-transparent"
                               )}
                               onMouseDown={handleContrastMouseDown}
-                              onMouseUp={handleContrastMouseUp}
+                              onMouseUp={handleContrastRelease}
                               onTouchStart={handleContrastMouseDown}
-                              onTouchEnd={handleContrastMouseUp}
+                              onTouchEnd={handleContrastRelease}
                               onClick={handleContrastClick}
                             >
                               <Contrast className="h-4 w-4" />
@@ -2051,7 +2095,7 @@ export default function Home() {
                       variant="ghost"
                       size="icon"
                       className={cn(
-                        "opacity-60",
+                        "opacity-60 hover:opacity-100",
                         isPrompterHighContrast ? "text-white hover:text-white bg-transparent" : "text-black hover:text-black bg-transparent"
                       )}
                     >
@@ -2067,7 +2111,7 @@ export default function Home() {
                       variant="ghost"
                       size="icon"
                       className={cn(
-                        "opacity-60",
+                        "opacity-60 hover:opacity-100",
                         isPrompterHighContrast ? "text-white hover:text-white bg-transparent" : "text-black hover:text-black bg-transparent"
                       )}
                     >
@@ -2083,7 +2127,7 @@ export default function Home() {
                       variant="ghost"
                       size="icon"
                       className={cn(
-                        "opacity-60",
+                        "opacity-60 hover:opacity-100",
                         isPrompterHighContrast ? "text-white hover:text-white bg-transparent" : "text-black hover:text-black bg-transparent"
                       )}
                     >
