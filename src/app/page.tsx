@@ -70,6 +70,8 @@ import {
   Timer,
   AudioLines,
   ListVideo,
+  FileText,
+  X,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -150,6 +152,7 @@ export default function Home() {
   const [isPresenterModeActive, setIsPresenterModeActive] = useState(false);
   const [isAiEditing, setIsAiEditing] = useState(false);
   const [isEditorExpanded, setIsEditorExpanded] = useState<boolean>(false);
+  const [isEditorClosed, setIsEditorClosed] = useState<boolean>(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [areCuesEnabled, setAreCuesEnabled] = useState<boolean>(true);
   const [isIndicatorVisible, setIsIndicatorVisible] = useState<boolean>(false);
@@ -1317,14 +1320,11 @@ export default function Home() {
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button 
-                              variant="outline" 
+                              variant={isVoiceControlOn ? "default" : "outline"} 
                               size="icon" 
                               onClick={() => setIsVoiceControlOn(!isVoiceControlOn)} 
                               disabled={voiceControlDisabled}
-                              className={cn(
-                                "rounded-l-none border-l-0",
-                                isVoiceControlOn && "bg-accent text-accent-foreground border-accent"
-                              )}
+                              className="rounded-l-none border-l-0"
                             >
                                 <Mic />
                             </Button>
@@ -1406,6 +1406,16 @@ export default function Home() {
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
+                        {isEditorClosed && (
+                           <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" onClick={() => setIsEditorClosed(false)}>
+                                        <FileText />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent><p>Show Script Editor</p></TooltipContent>
+                            </Tooltip>
+                        )}
                         <Popover open={isMicPickerOpen} onOpenChange={(open) => {
                             setIsMicPickerOpen(open);
                             if (open) {
@@ -1971,64 +1981,81 @@ export default function Home() {
           </div>
         </div>
       </div>
-      <div className={cn("px-4 pb-4 w-full", isMaximized ? "hidden" : "block")}>
-        <Card className="overflow-hidden">
-          <div className="relative">
-            <TooltipProvider>
-              <div className={cn("absolute right-1 top-1 z-10 flex items-center", prompterMode === 'slides' ? 'hidden': 'flex')}>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={handleCleanupScript}
-                            disabled={isAiEditing}
-                        >
-                            <Wand2 className="h-4 w-4" />
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p>Cleanup Script</p>
-                    </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setIsEditorExpanded(!isEditorExpanded)}
-                        >
-                            <ChevronsUpDown className="h-4 w-4" />
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p>{isEditorExpanded ? "Collapse" : "Expand"}</p>
-                    </TooltipContent>
-                </Tooltip>
-              </div>
-            </TooltipProvider>
-
-            <Textarea
-              placeholder={prompterMode === 'text' ? "Paste your script here..." : "Speaker notes will appear here..."}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onContextMenu={handleContextMenu}
-              className={cn(
-                'w-full resize-none rounded-none border-0 bg-transparent text-base transition-all duration-300 ease-in-out focus-visible:ring-0',
-                isEditorExpanded ? 'h-96' : 'h-32'
-              )}
-              disabled={isAiEditing || prompterMode === 'slides'}
-            />
-            {isAiEditing && (
-                <div className="absolute bottom-2 right-2 flex items-center gap-1">
-                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      {!isEditorClosed && (
+        <div className={cn("px-4 pb-4 w-full", isMaximized ? "hidden" : "block")}>
+            <Card className="overflow-hidden">
+            <div className="relative">
+                <TooltipProvider>
+                <div className={cn("absolute right-1 top-1 z-10 flex items-center")}>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={handleCleanupScript}
+                                disabled={isAiEditing || prompterMode === 'slides'}
+                            >
+                                <Wand2 className="h-4 w-4" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Cleanup Script</p>
+                        </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => setIsEditorExpanded(!isEditorExpanded)}
+                            >
+                                <ChevronsUpDown className="h-4 w-4" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>{isEditorExpanded ? "Collapse" : "Expand"}</p>
+                        </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => setIsEditorClosed(true)}
+                            >
+                                <X className="h-4 w-4" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Close Editor</p>
+                        </TooltipContent>
+                    </Tooltip>
                 </div>
-            )}
-          </div>
-        </Card>
-      </div>
+                </TooltipProvider>
+
+                <Textarea
+                placeholder={prompterMode === 'text' ? "Paste your script here..." : "Speaker notes will appear here..."}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onContextMenu={handleContextMenu}
+                className={cn(
+                    'w-full resize-none rounded-none border-0 bg-transparent text-base transition-all duration-300 ease-in-out focus-visible:ring-0',
+                    isEditorExpanded ? 'h-96' : 'h-32'
+                )}
+                disabled={isAiEditing || prompterMode === 'slides'}
+                />
+                {isAiEditing && (
+                    <div className="absolute bottom-2 right-2 flex items-center gap-1">
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    </div>
+                )}
+            </div>
+            </Card>
+        </div>
+      )}
        <GoogleDocPicker
         open={isDocPickerOpen}
         onOpenChange={setIsDocPickerOpen}
@@ -2070,4 +2097,5 @@ export default function Home() {
     </main>
   );
 }
+
 
