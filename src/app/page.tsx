@@ -1066,7 +1066,7 @@ export default function Home() {
 
     parts.forEach((part) => {
         const videoMatch = part.match(/\[PLAY VIDEO (\d+)\]/);
-        const pauseMatch = part.match(/\[PAUSE (\d+) SECONDS\]/);
+        const pauseMatch = part.match(/\[PAUSE \d+ SECONDS\]/);
 
         if (videoMatch || pauseMatch) {
             // This part is the cue, we render nothing visible for it
@@ -1302,21 +1302,24 @@ export default function Home() {
     setIsAppInDarkMode(isDark);
   };
   
-    const handleContrastLongPress = () => {
+  const wasLongPress = useRef(false);
+
+  const handleContrastMouseDown = () => {
+    wasLongPress.current = false;
     longPressTimerRef.current = setTimeout(() => {
+        wasLongPress.current = true;
         setIsBrightnessPopoverOpen(true);
     }, 500);
   };
 
-  const handleContrastRelease = () => {
+  const handleContrastMouseUp = () => {
     if (longPressTimerRef.current) {
         clearTimeout(longPressTimerRef.current);
-        longPressTimerRef.current = null;
     }
   };
 
   const handleContrastClick = () => {
-    if (!isBrightnessPopoverOpen) {
+    if (!wasLongPress.current) {
       setIsPrompterHighContrast(prev => !prev);
     }
   };
@@ -1829,12 +1832,8 @@ export default function Home() {
                     className={cn(
                       "h-full overflow-y-auto",
                       isPrompterHighContrast ? "bg-black" : "bg-white",
-                      isFlippedHorizontally && "scale-x-[-1]",
-                      isFlippedVertically && "scale-y-[-1]"
                     )}
                     style={{
-                      paddingLeft: `${horizontalMargin}%`,
-                      paddingRight: `${horizontalMargin}%`,
                       filter: !isPrompterHighContrast ? `brightness(${prompterBrightness}%)` : 'none'
                     }}
                   >
@@ -1955,6 +1954,42 @@ export default function Home() {
             )}
             <div className="absolute bottom-4 right-4 z-10 flex flex-col items-end gap-2">
               <TooltipProvider>
+                {isPanelCollapsed && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={() => setIsPanelCollapsed(false)}
+                        variant="ghost"
+                        size="icon"
+                        className={cn(
+                          "opacity-60",
+                          isPrompterHighContrast ? "text-white hover:text-white/80" : "text-black hover:text-black/80"
+                        )}
+                      >
+                        <PanelLeft className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="left"><p>Show Panel</p></TooltipContent>
+                  </Tooltip>
+                )}
+                {isPanelCollapsed && isEditorClosed && (
+                   <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={() => setIsEditorClosed(false)}
+                        variant="ghost"
+                        size="icon"
+                        className={cn(
+                          "opacity-60",
+                          isPrompterHighContrast ? "text-white hover:text-white/80" : "text-black hover:text-black/80"
+                        )}
+                      >
+                        <FileText className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="left"><p>Show Script Editor</p></TooltipContent>
+                  </Tooltip>
+                )}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -1982,10 +2017,10 @@ export default function Home() {
                                 "opacity-60",
                                 isPrompterHighContrast ? "text-white hover:text-white/80" : "text-black hover:text-black/80"
                               )}
-                              onMouseDown={handleContrastLongPress}
-                              onMouseUp={handleContrastRelease}
-                              onTouchStart={handleContrastLongPress}
-                              onTouchEnd={handleContrastRelease}
+                              onMouseDown={handleContrastMouseDown}
+                              onMouseUp={handleContrastMouseUp}
+                              onTouchStart={handleContrastMouseDown}
+                              onTouchEnd={handleContrastMouseUp}
                               onClick={handleContrastClick}
                             >
                               <Contrast className="h-4 w-4" />
