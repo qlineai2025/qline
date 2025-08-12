@@ -148,6 +148,7 @@ export default function Home() {
   const [isVoiceControlOn, setIsVoiceControlOn] = useState<boolean>(true);
   const [isProcessingAudio, setIsProcessingAudio] = useState<boolean>(false);
   const [isPrompterHighContrast, setIsPrompterHighContrast] = useState<boolean>(true);
+  const [prompterBrightness, setPrompterBrightness] = useState<number>(100);
   const [isMaximized, setIsMaximized] = useState<boolean>(false);
   const [isFlippedHorizontally, setIsFlippedHorizontally] = useState<boolean>(false);
   const [isFlippedVertically, setIsFlippedVertically] = useState<boolean>(false);
@@ -1826,6 +1827,7 @@ export default function Home() {
                         style={{
                           fontSize: `${fontSize}px`,
                           lineHeight: 1.5,
+                          filter: `brightness(${prompterBrightness}%)`
                         }}
                       >
                         {processedText()}
@@ -1848,6 +1850,9 @@ export default function Home() {
                               src={slides[currentSlideIndex]?.imageUrl}
                               alt={`Slide ${currentSlideIndex + 1}`}
                               className="max-w-full max-h-full object-contain"
+                              style={{
+                                filter: `brightness(${prompterBrightness}%)`
+                              }}
                           />
                       </div>
                     ) : (
@@ -1879,6 +1884,7 @@ export default function Home() {
                             style={{
                               fontSize: `${fontSize}px`,
                               lineHeight: 1.5,
+                              filter: `brightness(${prompterBrightness}%)`
                             }}
                           >
                             {processedText()}
@@ -1935,22 +1941,35 @@ export default function Home() {
                   </TooltipTrigger>
                   <TooltipContent side="left"><p>Rewind to Top</p></TooltipContent>
                 </Tooltip>
-                 <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={() => setIsPrompterHighContrast(!isPrompterHighContrast)}
-                      variant="ghost"
-                      size="icon"
-                      className={cn(
-                        "opacity-60",
-                        isPrompterHighContrast ? "text-white hover:text-white/80" : "text-black hover:text-black/80"
-                      )}
-                    >
-                      <Contrast className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="left"><p>Toggle Contrast</p></TooltipContent>
-                </Tooltip>
+                <Popover>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                       <PopoverTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={cn(
+                              "opacity-60",
+                              isPrompterHighContrast ? "text-white hover:text-white/80" : "text-black hover:text-black/80"
+                            )}
+                          >
+                            <Contrast className="h-4 w-4" />
+                          </Button>
+                        </PopoverTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent side="left"><p>Brightness</p></TooltipContent>
+                  </Tooltip>
+                  <PopoverContent side="left" align="center" className="w-[150px] p-2">
+                     <Slider
+                        defaultValue={[prompterBrightness]}
+                        onValueChange={(value) => setPrompterBrightness(value[0])}
+                        max={100}
+                        min={10}
+                        step={1}
+                      />
+                  </PopoverContent>
+                </Popover>
+
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
