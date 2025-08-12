@@ -74,6 +74,7 @@ import {
   X,
   Sun,
   Moon,
+  PanelLeft,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -160,6 +161,7 @@ export default function Home() {
   const [areCuesEnabled, setAreCuesEnabled] = useState<boolean>(true);
   const [isIndicatorVisible, setIsIndicatorVisible] = useState<boolean>(false);
   const [isAppInDarkMode, setIsAppInDarkMode] = useState<boolean>(false);
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState<boolean>(false);
   
   const [prompterMode, setPrompterMode] = useState<'text' | 'slides'>('text');
   const [slideDisplayMode, setSlideDisplayMode] = useState<'slide' | 'notes'>('slide');
@@ -207,6 +209,8 @@ export default function Home() {
   const [pauseCountdown, setPauseCountdown] = useState<number | null>(null);
   const [triggeredCues, setTriggeredCues] = useState<number[]>([]);
   const [upcomingCue, setUpcomingCue] = useState<number | null>(null);
+  const [isBrightnessPopoverOpen, setIsBrightnessPopoverOpen] = useState(false);
+
 
   const displayRef = useRef<HTMLDivElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -215,6 +219,7 @@ export default function Home() {
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const videoCountdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const pauseCountdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   const animationFrameRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number | null>(null);
@@ -1296,12 +1301,32 @@ export default function Home() {
     const isDark = document.documentElement.classList.toggle('dark');
     setIsAppInDarkMode(isDark);
   };
+  
+    const handleContrastLongPress = () => {
+    longPressTimerRef.current = setTimeout(() => {
+        setIsBrightnessPopoverOpen(true);
+    }, 500);
+  };
+
+  const handleContrastRelease = () => {
+    if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+    }
+  };
+
+  const handleContrastClick = () => {
+    if (!isBrightnessPopoverOpen) {
+      setIsPrompterHighContrast(prev => !prev);
+    }
+  };
+
 
   return (
     <main className="flex h-screen flex-col bg-background" onClickCapture={() => { if (contextMenu) setContextMenu(null)}}>
-      <div className="grid flex-1 grid-cols-[auto_1fr] gap-4 p-4 min-h-0">
-        <div className="h-full overflow-y-auto">
-            <Card className="w-[280px] h-full flex flex-col">
+      <div className={cn("grid flex-1 min-h-0 gap-4 p-4 transition-all", isPanelCollapsed ? "grid-cols-[0px_1fr]" : "grid-cols-[280px_1fr]")}>
+        <div className={cn("h-full overflow-y-auto transition-all duration-300", isPanelCollapsed ? "w-0 opacity-0" : "w-[280px] opacity-100")}>
+            <Card className="w-full h-full flex flex-col">
               <CardContent className="flex flex-col items-center gap-4 p-2 flex-1">
                  <TooltipProvider>
                     <div className="flex flex-col items-center justify-center gap-2 w-full">
@@ -1941,34 +1966,39 @@ export default function Home() {
                   </TooltipTrigger>
                   <TooltipContent side="left"><p>Rewind to Top</p></TooltipContent>
                 </Tooltip>
-                <Popover>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                       <PopoverTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className={cn(
-                              "opacity-60",
-                              isPrompterHighContrast ? "text-white hover:text-white/80" : "text-black hover:text-black/80"
-                            )}
-                          >
-                            <Contrast className="h-4 w-4" />
-                          </Button>
+                 <Popover open={isBrightnessPopoverOpen} onOpenChange={setIsBrightnessPopoverOpen}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <PopoverTrigger asChild>
+                           <Button
+                              variant="ghost"
+                              size="icon"
+                              className={cn(
+                                  "opacity-60",
+                                  isPrompterHighContrast ? "text-white hover:text-white/80" : "text-black hover:text-black/80"
+                              )}
+                              onMouseDown={handleContrastLongPress}
+                              onMouseUp={handleContrastRelease}
+                              onTouchStart={handleContrastLongPress}
+                              onTouchEnd={handleContrastRelease}
+                              onClick={handleContrastClick}
+                            >
+                              <Contrast className="h-4 w-4" />
+                            </Button>
                         </PopoverTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent side="left"><p>Brightness</p></TooltipContent>
-                  </Tooltip>
-                  <PopoverContent side="left" align="center" className="w-[150px] p-2">
-                     <Slider
-                        defaultValue={[prompterBrightness]}
-                        onValueChange={(value) => setPrompterBrightness(value[0])}
-                        max={100}
-                        min={10}
-                        step={1}
-                      />
-                  </PopoverContent>
-                </Popover>
+                      </TooltipTrigger>
+                      <TooltipContent side="left"><p>Toggle Contrast (Hold for Brightness)</p></TooltipContent>
+                    </Tooltip>
+                    <PopoverContent side="left" align="center" className="w-[150px] p-2">
+                        <Slider
+                            defaultValue={[prompterBrightness]}
+                            onValueChange={(value) => setPrompterBrightness(value[0])}
+                            max={100}
+                            min={10}
+                            step={1}
+                        />
+                    </PopoverContent>
+                 </Popover>
 
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -2029,6 +2059,21 @@ export default function Home() {
             <div className="relative">
                 <TooltipProvider>
                 <div className={cn("absolute right-1 top-1 z-10 flex items-center")}>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                             <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => setIsPanelCollapsed(prev => !prev)}
+                            >
+                                <PanelLeft className="h-4 w-4" />
+                            </Button>
+                        </TooltipTrigger>
+                         <TooltipContent>
+                            <p>{isPanelCollapsed ? "Show Panel" : "Hide Panel"}</p>
+                        </TooltipContent>
+                    </Tooltip>
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button
@@ -2139,5 +2184,4 @@ export default function Home() {
     </main>
   );
 }
-
 
