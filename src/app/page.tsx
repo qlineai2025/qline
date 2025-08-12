@@ -117,7 +117,7 @@ const DEFAULT_SETTINGS = {
   horizontalMargin: 20,
   verticalMargin: 40,
   startDelay: 3,
-  accentColor: "#22d3ee",
+  accentColor: "#80CBC4",
 };
 
 
@@ -272,7 +272,7 @@ export default function Home() {
             }
             h /= 6;
         }
-        return `${(h * 360).toFixed(0)} ${(s * 100).toFixed(0)}% ${(l * 100).toFixed(0)}%`;
+        return `${(h * 360).toFixed(0)} ${(s * 100).toFixed(1)}% ${(l * 100).toFixed(1)}%`;
     }
 
     document.documentElement.style.setProperty('--accent', hexToHsl(accentColor));
@@ -1555,7 +1555,7 @@ export default function Home() {
                             </TooltipTrigger>
                             <TooltipContent><p>Accent Color</p></TooltipContent>
                           </Tooltip>
-                          <PopoverContent className="w-auto p-2">
+                          <PopoverContent className="w-auto p-0 border-none">
                              <HexColorPicker color={accentColor} onChange={setAccentColor} />
                           </PopoverContent>
                         </Popover>
