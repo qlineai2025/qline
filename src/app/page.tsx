@@ -1927,7 +1927,7 @@ export default function Home() {
                       size="icon"
                       className={cn(
                         "opacity-60",
-                        isPrompterHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : "bg-white text-black hover:bg-white/80 hover:text-black"
+                        isPrompterHighContrast ? "text-white hover:text-white/80" : "text-black hover:text-black/80"
                       )}
                     >
                       <Rewind className="h-4 w-4" />
@@ -1943,7 +1943,7 @@ export default function Home() {
                       size="icon"
                       className={cn(
                         "opacity-60",
-                        isPrompterHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : "bg-white text-black hover:bg-white/80 hover:text-black"
+                        isPrompterHighContrast ? "text-white hover:text-white/80" : "text-black hover:text-black/80"
                       )}
                     >
                       <Contrast className="h-4 w-4" />
@@ -1959,7 +1959,7 @@ export default function Home() {
                       size="icon"
                       className={cn(
                         "opacity-60",
-                        isPrompterHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : "bg-white text-black hover:bg-white/80 hover:text-black"
+                        isPrompterHighContrast ? "text-white hover:text-white/80" : "text-black hover:text-black/80"
                       )}
                     >
                       <ArrowLeftRight className="h-4 w-4" />
@@ -1975,7 +1975,7 @@ export default function Home() {
                       size="icon"
                       className={cn(
                         "opacity-60",
-                        isPrompterHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : "bg-white text-black hover:bg-white/80 hover:text-black"
+                        isPrompterHighContrast ? "text-white hover:text-white/80" : "text-black hover:text-black/80"
                       )}
                     >
                       <ArrowUpDown className="h-4 w-4" />
@@ -1991,7 +1991,7 @@ export default function Home() {
                       size="icon"
                       className={cn(
                         "opacity-60",
-                        isPrompterHighContrast && isMaximized ? "bg-black text-white hover:bg-black/80 hover:text-white" : "bg-white text-black hover:bg-white/80 hover:text-black"
+                        isPrompterHighContrast ? "text-white hover:text-white/80" : "text-black hover:text-black/80"
                       )}
                     >
                     {isMaximized ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
@@ -2120,4 +2120,5 @@ export default function Home() {
     </main>
   );
 }
+
 
