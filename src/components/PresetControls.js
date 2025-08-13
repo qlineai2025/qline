@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc } from 'firebase/firestore';
 import { getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { useAuth } from '/src/components/AuthProvider'; // Assuming AuthProvider is in the same directory
+import { useAuth } from '/src/components/auth-provider'; // Assuming AuthProvider is in the same directory
 
 // Import shadcn/ui components
 import { Button } from "/src/components/ui/button";

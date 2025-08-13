@@ -1,6 +1,11 @@
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+});
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
+  /* config options here */
+
   /* config options here */
   typescript: {
     ignoreBuildErrors: true,
@@ -18,7 +23,12 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Remove the 'output: 'export'' line
 };
 
-export default nextConfig;
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+});
+
+// Remove the 'output: 'export'' line
+
+export default withBundleAnalyzer(nextConfig);

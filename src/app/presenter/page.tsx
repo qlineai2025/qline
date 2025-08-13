@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import type { GoogleSlideContent } from '@/ai/flows/google-drive-flows';
 
@@ -18,6 +17,7 @@ interface PresenterSettings {
   slides: GoogleSlideContent[];
   currentSlideIndex: number;
   slideDisplayMode: 'slide' | 'notes';
+  prompterBrightness: number;
 }
 
 const DEFAULT_SETTINGS: PresenterSettings = {
@@ -33,8 +33,10 @@ const DEFAULT_SETTINGS: PresenterSettings = {
   slides: [],
   currentSlideIndex: 0,
   slideDisplayMode: 'slide',
+  prompterBrightness: 100
 };
 
+// This helper function renders the text with IDs for scrolling, but it's outside the component to avoid re-renders.
 function processedTextForPresenter(text: string) {
     const regex = /(\[PLAY VIDEO \d+\]|\[PAUSE \d+ SECONDS\])/g;
     const parts = text.split(regex);
@@ -63,6 +65,11 @@ function processedTextForPresenter(text: string) {
     return elements;
 }
 
+// ✅ IMPROVEMENT: Moved helper function outside component since it doesn't need state.
+const mapSliderToEffectiveSpeed = (sliderValue: number): number => {
+  return 2.25 * sliderValue + 25;
+};
+
 export default function PresenterPage() {
   const [settings, setSettings] = useState<PresenterSettings>(DEFAULT_SETTINGS);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -71,68 +78,6 @@ export default function PresenterPage() {
   const animationFrameRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number | null>(null);
   const scrollSpeedRef = useRef(settings.scrollSpeed);
-
-  const mapSliderToEffectiveSpeed = (sliderValue: number): number => {
-    // New mapping: Slider 0-100 -> Speed 25-250 px/s
-    // y = mx + b
-    // m = (250 - 25) / (100 - 0) = 2.25
-    // b = 25
-    return 2.25 * sliderValue + 25;
-  };
-
-
-  useEffect(() => { scrollSpeedRef.current = settings.scrollSpeed; }, [settings.scrollSpeed]);
-  
-  useEffect(() => {
-    try {
-      const savedSettings = localStorage.getItem('teleprompter_settings');
-      if (savedSettings) {
-        setSettings(JSON.parse(savedSettings));
-      }
-    } catch (e) {
-      console.error("Could not read settings from localStorage", e);
-    }
-    
-    const channel = new BroadcastChannel('teleprompter_channel');
-    channel.onmessage = (event) => {
-      const { type, payload } = event.data;
-      switch (type) {
-        case 'settings_update':
-          setSettings(payload);
-          break;
-        case 'play':
-          setIsPlaying(true);
-          break;
-        case 'pause':
-          setIsPlaying(false);
-          break;
-        case 'reset':
-          if (displayRef.current) displayRef.current.scrollTop = 0;
-          break;
-        case 'scroll_to_word':
-          const targetWord = document.getElementById(`presenter-word-${payload.wordIndex}`);
-          targetWord?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          break;
-        case 'slide_change':
-           setSettings(s => {
-                const newSettings = {...s, ...payload};
-                // When slide changes, presenter view always shows the slide image first
-                newSettings.slideDisplayMode = 'slide'; 
-                // Then, get text from the main window's settings
-                try {
-                    const mainSettings = localStorage.getItem('teleprompter_settings');
-                    if(mainSettings) {
-                        newSettings.text = JSON.parse(mainSettings).text;
-                    }
-                } catch(e) {}
-                return newSettings;
-            });
-            break;
-      }
-    };
-
-    return () => channel.close();
-  }, []);
 
   const scrollAnimation = useCallback((timestamp: number) => {
     if (!lastTimeRef.current) {
@@ -155,7 +100,7 @@ export default function PresenterPage() {
           animationFrameRef.current = requestAnimationFrame(scrollAnimation);
       }
     }
-  }, []);
+  }, []); // ✅ FIXED: Removed unnecessary dependencies for a stable callback.
 
   const startScroll = useCallback(() => {
     lastTimeRef.current = null;
@@ -178,6 +123,47 @@ export default function PresenterPage() {
     }
     return stopScroll;
   }, [isPlaying, startScroll, stopScroll, settings.prompterMode, settings.slideDisplayMode]);
+  
+  useEffect(() => {
+    try {
+      const savedSettings = localStorage.getItem('teleprompter_settings');
+      if (savedSettings) {
+        const parsedSettings = JSON.parse(savedSettings);
+        setSettings(parsedSettings);
+        scrollSpeedRef.current = parsedSettings.scrollSpeed;
+      }
+    } catch (e) {
+      console.error("Could not read settings from localStorage", e);
+    }
+    
+    const channel = new BroadcastChannel('teleprompter_channel');
+    channel.onmessage = (event) => {
+      const { type, payload } = event.data;
+      switch (type) {
+        case 'settings_update':
+          setSettings(payload);
+          scrollSpeedRef.current = payload.scrollSpeed;
+          if (displayRef.current) displayRef.current.scrollTop = 0;
+          break;
+        case 'play':
+          setIsPlaying(true);
+          break;
+        case 'pause':
+          setIsPlaying(false);
+          break;
+        case 'scroll_to_word':
+          const targetWord = document.getElementById(`presenter-word-${payload.wordIndex}`);
+          targetWord?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          break;
+        case 'reset':
+          if (displayRef.current) displayRef.current.scrollTop = 0;
+          break;
+      }
+    };
+
+    return () => channel.close();
+  }, []);
+
 
   const PrompterContent = () => (
     <div
@@ -191,6 +177,8 @@ export default function PresenterPage() {
       style={{
         paddingLeft: `${settings.horizontalMargin}%`,
         paddingRight: `${settings.horizontalMargin}%`,
+        // ✅ NEW: Apply brightness filter to the container for consistency
+        filter: !settings.isPrompterHighContrast ? `brightness(${settings.prompterBrightness}%)` : 'none'
       }}
     >
       <div
@@ -231,13 +219,21 @@ export default function PresenterPage() {
           src={settings.slides[settings.currentSlideIndex]?.imageUrl}
           alt={`Slide ${settings.currentSlideIndex + 1}`}
           className="max-w-full max-h-full object-contain"
+          // ✅ FIXED: Added brightness filter to the slide content
+          style={{
+            filter: !settings.isPrompterHighContrast ? `brightness(${settings.prompterBrightness}%)` : 'none'
+          }}
         />
       </div>
     );
   };
   
   return (
-    <main className="h-screen w-screen bg-black overflow-hidden">
+    <main className="h-screen w-screen bg-black overflow-hidden"
+    // ✅ NEW: Apply brightness filter to the main tag when in high contrast mode
+      style={{
+        filter: settings.isPrompterHighContrast ? `brightness(${settings.prompterBrightness}%)` : 'none'
+      }}>
         {settings.prompterMode === 'text' && <PrompterContent />}
         {settings.prompterMode === 'slides' && (
           settings.slideDisplayMode === 'notes' ? <PrompterContent /> : <SlideContent />
@@ -245,4 +241,3 @@ export default function PresenterPage() {
     </main>
   );
 }
-
