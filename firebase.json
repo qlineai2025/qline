@@ -1,0 +1,28 @@
+{
+  "hosting": {
+    // Specifies the directory that contains the site content to deploy.
+    "public": "out",
+
+    // Configures single-page application (SPA) routing by rewriting requests
+    // that don't match existing files or directories to index.html.
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ],
+
+    // Defines HTTP headers for deployed content.
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          {
+            "key": "Content-Security-Policy",
+            "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com *.firebaseapp.com *.web.app; style-src 'self' 'unsafe-inline' https://www.gstatic.com *.firebaseapp.com *.web.app; img-src 'self' data: https://www.gstatic.com *.firebaseapp.com *.web.app; font-src 'self' https://www.gstatic.com *.firebaseapp.com *.web.app; connect-src 'self' wss://*.firebaseapp.com https://*.googleapis.com *.web.app; object-src 'none';"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -77,10 +77,17 @@ const scriptAssistantFlow = ai.defineFlow(
     outputSchema: z.string(),
   },
   async (input) => {
-    const { output } = await prompt(input);
-    if (output === null || output === undefined) {
-      throw new Error('The AI model did not produce a valid output.');
+    try {
+      const { output } = await prompt(input);
+      if (output === null || output === undefined) {
+        throw new Error('The AI model did not produce a valid output.');
+      }
+      return output;
+    } catch (e: any) {
+        console.error("An error occurred in the script assistant flow:", e);
+        // ✅ Return an empty string or a custom error message string
+        //    as the client is expecting a string output.
+        return 'An unexpected error occurred while processing your request.';
     }
-    return output;
   }
 );

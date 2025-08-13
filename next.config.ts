@@ -18,6 +18,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Remove the 'output: 'export'' line
 };
 
 export default nextConfig;

@@ -152,12 +152,17 @@ const teleprompterControlFlow = ai.defineFlow(
       }
       return output;
     } catch (e: any) {
-      if (e.message?.includes('API key')) {
-        console.error("Genkit configuration error: The GOOGLE_API_KEY may be missing or invalid.", e);
-        throw new Error('Voice Control is not configured. Please ensure your GOOGLE_API_KEY is set correctly in the .env file.');
-      }
+      // ✅ This is the critical change. Instead of re-throwing the raw error,
+      //    we return a serializable object.
       console.error("An error occurred in the teleprompter control flow:", e);
-      throw new Error('An unexpected error occurred while processing voice input.');
+      return {
+        command: 'no_op',
+        slideNumber: null,
+        targetWordIndex: null,
+        modifiedScript: null,
+        lastSpokenWordIndex: -1,
+        adjustedScrollSpeed: -1
+      };
     }
   }
 );
